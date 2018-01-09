@@ -5,7 +5,7 @@ Libbdvmi
 The Xen version that can be used for testing is 4.6.
 To test the library, please issue:
 
-$ ./bootstrap
+$ autoreconf -fvi
 $ ./configure
 $ make
 
