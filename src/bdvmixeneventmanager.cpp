@@ -51,6 +51,12 @@ extern "C" {
 #define RSP_DATA_SIZE( x ) x.data.emul_read_data.size
 #endif
 
+#if VM_EVENT_INTERFACE_VERSION > 0x00000002
+#define MSR_NEW_VALUE( x) x.u.mov_to_msr.new_value
+#else
+#define MSR_NEW_VALUE( x) x.u.mov_to_msr.value
+#endif
+
 #define LOG_ERROR( x )                                                                                                 \
 	{                                                                                                              \
 		if ( logHelper_ )                                                                                      \
@@ -184,7 +190,11 @@ bool XenEventManager::enableMsrEvents( unsigned int msr, bool &oldValue )
 
 	if ( !oldValue ) { 
 		enabledMsrs_.insert( msr );
+#if VM_EVENT_INTERFACE_VERSION > 0x00000002
+		return ( xc_monitor_mov_to_msr( xci_, domain_, msr, 1, true ) == 0 );
+#else
 		return ( xc_monitor_mov_to_msr( xci_, domain_, msr, 1 ) == 0 );
+#endif
 	}
 
 	return true;
@@ -196,7 +206,11 @@ bool XenEventManager::disableMsrEvents( unsigned int msr, bool &oldValue )
 
 	if ( oldValue ) { 
 		enabledMsrs_.erase( msr );
+#if VM_EVENT_INTERFACE_VERSION > 0x00000002
+		return ( xc_monitor_mov_to_msr( xci_, domain_, msr, 0, true ) == 0 );
+#else
 		return ( xc_monitor_mov_to_msr( xci_, domain_, msr, 0 ) == 0 );
+#endif
 	}
 
 	return true;
@@ -550,6 +564,9 @@ void XenEventManager::waitForEvents()
 
 						auto i = msrOldValueCache_.find( req.vcpu_id );
 						uint64_t oldValue;
+#if VM_EVENT_INTERFACE_VERSION > 0x00000002
+						oldValue = req.u.mov_to_msr.old_value;
+#else
 
 						if ( i == msrOldValueCache_.end() ) // not found
 							oldValue = getMsr( req.vcpu_id, req.u.mov_to_msr.msr );
@@ -561,15 +578,18 @@ void XenEventManager::waitForEvents()
 							else
 								oldValue = j->second;
 						}
+#endif
 
 						h->handleMSR( req.vcpu_id, req.u.mov_to_msr.msr, oldValue,
-						              req.u.mov_to_msr.value, action );
+						              MSR_NEW_VALUE( req ), action );
 
 						if ( action == SKIP_INSTRUCTION || action == EMULATE_NOWRITE )
 							rsp.flags |= VM_EVENT_FLAG_DENY;
+#if VM_EVENT_INTERFACE_VERSION <= 0x00000002
 						else
 							msrOldValueCache_[req.vcpu_id][req.u.mov_to_msr.msr] =
 								req.u.mov_to_msr.value;
+#endif
 					}
 
 					break;
