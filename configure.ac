@@ -32,6 +32,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
+AC_CHECK_LIB(dl, dlopen, , AC_MSG_ERROR([Could not find libdl]))
 dnl AC_CHECK_LIB(xenctrl, xc_interface_open, , AC_MSG_ERROR([Could not find libxenctrl!]))
 AC_CHECK_LIB(xenstore, xs_open, , AC_MSG_ERROR([Could not find libxenstore!]))
 
