@@ -15,7 +15,6 @@ config.status
 config.sub
 configure
 depcomp
-examples/hookguest
 INSTALL
 install-sh
 libtool
@@ -34,3 +33,6 @@ GPATH
 GRTAGS
 GSYMS
 GTAGS
+
+examples/hookguest
+examples/testctrl
