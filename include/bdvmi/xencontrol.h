@@ -20,9 +20,6 @@
 #include <xenctrl.h>
 #include <xen/xen.h>
 
-typedef xc_interface* xc_interface_open_t ( xentoollog_logger*,  xentoollog_logger*, unsigned );
-typedef int xc_interface_close_t ( xc_interface* );
-
 namespace bdvmi {
 
 	class XenControl {
@@ -31,17 +28,22 @@ public:
 	XenControl( );
 	~XenControl( );
 
+	int xen_major_version;	// XEN Major version
+	int xen_minor_version;	// XEN Minor version
+
 protected:
 	template < typename T >
-	void lookup( std::function<T> &func, const std::string &name, bool required );
+	std::function<T> lookup( const std::string &name, bool required );
 
 private:
 	void *libxc_handle_;
 
 	xc_interface *xci_;
 
-	std::function < xc_interface_open_t > interface_open_;
-	std::function < xc_interface_close_t > interface_close_;
+
+	std::function < decltype(xc_interface_open)  > interface_open_;
+	std::function < decltype(xc_interface_close) > interface_close_;
+	std::function < decltype(xc_version)         > version_;
 };
 
 } // namespace bdvmi

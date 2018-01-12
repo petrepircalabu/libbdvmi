@@ -19,11 +19,12 @@
 namespace bdvmi {
 
 template < typename T>
-void XenControl::lookup( std::function<T> &func, const std::string &name, bool required )
+std::function<T> XenControl::lookup( const std::string &name, bool required )
 {
-	func = reinterpret_cast< T* >( ::dlsym( libxc_handle_, name.c_str() ) );
+	std::function<T> func = reinterpret_cast< T* >( ::dlsym( libxc_handle_, name.c_str() ) );
 	if ( required && !func )
 		throw std::runtime_error( "Failed to get the \"" + name + "\" function" );
+	return func;
 }
 
 XenControl::XenControl ( )
@@ -33,12 +34,18 @@ XenControl::XenControl ( )
 	if ( !libxc_handle_ )
 		throw std::runtime_error( "Failed to open the XEN control library." );
 
-	lookup< xc_interface_open_t >( interface_open_, "xc_interface_open", true );
-	lookup< xc_interface_close_t >( interface_close_, "xc_interface_close", true );
+	interface_open_  = lookup< decltype(xc_interface_open) > ( "xc_interface_open",  true );
+	interface_close_ = lookup< decltype(xc_interface_close) >( "xc_interface_close", true );
 
 	xci_ = interface_open_( NULL, NULL, 0 );
 	if ( !xci_ )
 		throw std::runtime_error( "xc_interface_open() failed" );
+
+	version_ = lookup <decltype(xc_version) > ( "xc_version", true );
+	int ver = version_(xci_, XENVER_version, NULL);
+
+	xen_major_version = ver >> 16;
+	xen_minor_version = ver & ((1 << 16) - 1);
 }
 
 XenControl::~XenControl ( )
