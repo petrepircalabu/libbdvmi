@@ -14,7 +14,7 @@
 // License along with this library.
 
 #ifndef __BDVMIXENCTRL_H_INCLUDED__
-#define __BDVMIXENCTRL_H_INCLUDED_
+#define __BDVMIXENCTRL_H_INCLUDED__
 
 #include <functional>
 #include <memory>
@@ -25,10 +25,17 @@ class XenControlFactory;
 
 class XenControl {
 public:
-	XenControl( );
-	~XenControl( );
+	static XenControl& Instance();
 
 private:
+	~XenControl( ) = default;
+	XenControl( );
+
+	XenControl(const XenControl&) = delete;
+	XenControl& operator=(const XenControl&) = delete;
+	XenControl(XenControl &&) = delete;
+	XenControl& operator=(XenControl&&) = delete;
+
 	std::unique_ptr<XenControlFactory> factory_;
 
 public:

@@ -84,13 +84,15 @@ XenControlFactory::~XenControlFactory( )
 	::dlclose( libxc_handle_ );
 }
 
+XenControl& XenControl::Instance()
+{
+	static XenControl instance;
+	return instance;
+}
+
 XenControl::XenControl( ) :
 	factory_(new XenControlFactory()),
 	runtime_version(factory_->get_version())
-{
-}
-
-XenControl::~XenControl()
 {
 }
 
