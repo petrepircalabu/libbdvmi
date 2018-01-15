@@ -123,7 +123,7 @@ XenControlFactory::~XenControlFactory( )
 	::dlclose( libxcHandle_ );
 }
 
-XenControl& XenControl::Instance()
+XenControl& XenControl::instance()
 {
 	static XenControl instance;
 	return instance;

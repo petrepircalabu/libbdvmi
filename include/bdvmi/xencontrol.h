@@ -37,16 +37,13 @@ using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shu
 
 class XenControl {
 public:
-	static XenControl& Instance();
+	static XenControl& instance();
 
 private:
-	~XenControl( ) = default;
 	XenControl( );
 
 	XenControl(const XenControl&) = delete;
 	XenControl& operator=(const XenControl&) = delete;
-	XenControl(XenControl &&) = delete;
-	XenControl& operator=(XenControl&&) = delete;
 
 	std::unique_ptr<XenControlFactory> factory_;
 
