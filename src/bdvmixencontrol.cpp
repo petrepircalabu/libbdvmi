@@ -33,6 +33,7 @@ public:
 
 	auto getDomainPause() const -> DomainPauseFunc;
 	auto getDomainUnpause() const -> DomainUnpauseFunc;
+	auto getDomainShutdown() const -> DomainShutdownFunc;
 
 	std::pair< int, int > getVersion() const;
 
@@ -76,6 +77,15 @@ auto XenControlFactory::getDomainUnpause() const -> DomainUnpauseFunc
 	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_pause) > ( "xc_domain_unpause", true);
 	return std::bind(f, getInterface(), _1);
+}
+
+auto XenControlFactory::getDomainShutdown() const -> DomainShutdownFunc
+{
+	static_assert( std::is_same <xc_domain_shutdown_func_t , decltype(xc_domain_shutdown)>::value , "" );
+
+	using namespace std::placeholders;
+	auto f = lookup< decltype(xc_domain_shutdown) > ( "xc_domain_shutdown", true);
+	return std::bind(f, getInterface(), _1, _2);
 }
 
 XenControlFactory::XenControlFactory( )

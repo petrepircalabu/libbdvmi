@@ -25,6 +25,7 @@ typedef struct xc_interface_core xc_interface;
 
 typedef int xc_domain_pause_func_t ( xc_interface*, uint32_t );
 typedef int xc_domain_unpause_func_t ( xc_interface*, uint32_t );
+typedef int xc_domain_shutdown_func_t ( xc_interface *xch, uint32_t domid, int reason );
 
 namespace bdvmi {
 
@@ -32,6 +33,7 @@ class XenControlFactory;
 
 using DomainPauseFunc = std::function< utils::remove_first_arg< xc_domain_pause_func_t >::type >;
 using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpause_func_t >::type >;
+using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shutdown_func_t >::type >;
 
 class XenControl {
 public:
@@ -56,6 +58,7 @@ public:
 	 */
 	const DomainPauseFunc domainPause;
 	const DomainUnpauseFunc domainUnpause;
+	const DomainShutdownFunc domainShutdown;
 };
 
 } // namespace bdvmi
