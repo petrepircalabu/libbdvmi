@@ -18,10 +18,20 @@
 
 #include <functional>
 #include <memory>
+#include "bdvmi/utils.h"
+
+struct xc_interface_core;
+typedef struct xc_interface_core xc_interface;
+
+typedef int xc_domain_pause_func_t ( xc_interface*, uint32_t );
+typedef int xc_domain_unpause_func_t ( xc_interface*, uint32_t );
 
 namespace bdvmi {
 
 class XenControlFactory;
+
+using DomainPauseFunc = std::function< utils::remove_first_arg< xc_domain_pause_func_t >::type >;
+using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpause_func_t >::type >;
 
 class XenControl {
 public:
@@ -39,7 +49,13 @@ private:
 	std::unique_ptr<XenControlFactory> factory_;
 
 public:
-	const std::pair<int, int> runtime_version;
+	const std::pair<int, int> runtimeVersion;
+
+	/*
+	 * DOMAIN MANAGEMENT FUNCTIONS
+	 */
+	const DomainPauseFunc domainPause;
+	const DomainUnpauseFunc domainUnpause;
 };
 
 } // namespace bdvmi
