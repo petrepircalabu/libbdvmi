@@ -19,31 +19,22 @@
 #include <functional>
 #include <xenctrl.h>
 #include <xen/xen.h>
+#include <memory>
 
 namespace bdvmi {
 
-	class XenControl {
+class XenControlFactory;
 
+class XenControl {
 public:
 	XenControl( );
 	~XenControl( );
 
-	int xen_major_version;	// XEN Major version
-	int xen_minor_version;	// XEN Minor version
-
-protected:
-	template < typename T >
-	std::function<T> lookup( const std::string &name, bool required );
-
 private:
-	void *libxc_handle_;
+	std::unique_ptr<XenControlFactory> factory_;
 
-	xc_interface *xci_;
-
-
-	std::function < decltype(xc_interface_open)  > interface_open_;
-	std::function < decltype(xc_interface_close) > interface_close_;
-	std::function < decltype(xc_version)         > version_;
+public:
+	const std::pair<int, int> runtime_version;
 };
 
 } // namespace bdvmi

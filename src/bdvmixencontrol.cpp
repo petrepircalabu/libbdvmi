@@ -18,8 +18,28 @@
 
 namespace bdvmi {
 
+class XenControlFactory
+{
+public:
+	XenControlFactory( );
+	~XenControlFactory( );
+
+	template < typename T >
+	std::function<T> lookup( const std::string &name, bool required );
+
+	std::pair< int, int > get_version() const;
+
+private:
+	void *libxc_handle_;
+	xc_interface *xci_;
+
+	std::function < decltype(xc_interface_open)  > interface_open_;
+	std::function < decltype(xc_interface_close) > interface_close_;
+	std::function < decltype(xc_version)         > version_;
+};
+
 template < typename T>
-std::function<T> XenControl::lookup( const std::string &name, bool required )
+std::function<T> XenControlFactory::lookup( const std::string &name, bool required )
 {
 	std::function<T> func = reinterpret_cast< T* >( ::dlsym( libxc_handle_, name.c_str() ) );
 	if ( required && !func )
@@ -27,7 +47,7 @@ std::function<T> XenControl::lookup( const std::string &name, bool required )
 	return func;
 }
 
-XenControl::XenControl ( )
+XenControlFactory::XenControlFactory( )
     : libxc_handle_( nullptr ), xci_( nullptr )
 {
 	libxc_handle_ = ::dlopen( "libxenctrl.so", RTLD_NOW | RTLD_GLOBAL );
@@ -42,13 +62,16 @@ XenControl::XenControl ( )
 		throw std::runtime_error( "xc_interface_open() failed" );
 
 	version_ = lookup <decltype(xc_version) > ( "xc_version", true );
-	int ver = version_(xci_, XENVER_version, NULL);
-
-	xen_major_version = ver >> 16;
-	xen_minor_version = ver & ((1 << 16) - 1);
 }
 
-XenControl::~XenControl ( )
+std::pair< int, int > XenControlFactory::get_version() const
+{
+	int ver = version_(xci_, XENVER_version, NULL);
+
+	return std::make_pair<int, int>(ver >> 16, ver & ((1 << 16) - 1));
+}
+
+XenControlFactory::~XenControlFactory( )
 {
 	if ( !libxc_handle_ )
 		return;
@@ -56,8 +79,17 @@ XenControl::~XenControl ( )
 	if ( xci_ )
 		interface_close_( xci_ );
 
-
 	::dlclose( libxc_handle_ );
+}
+
+XenControl::XenControl( ) :
+	factory_(new XenControlFactory()),
+	runtime_version(factory_->get_version())
+{
+}
+
+XenControl::~XenControl()
+{
 }
 
 } // namespace bdvmi
