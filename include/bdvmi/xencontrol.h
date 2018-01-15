@@ -17,8 +17,6 @@
 #define __BDVMIXENCTRL_H_INCLUDED_
 
 #include <functional>
-#include <xenctrl.h>
-#include <xen/xen.h>
 #include <memory>
 
 namespace bdvmi {

@@ -15,6 +15,8 @@
 
 #include "bdvmi/xencontrol.h"
 #include <dlfcn.h>
+#include <xenctrl.h>
+#include <xen/xen.h>
 
 namespace bdvmi {
 
