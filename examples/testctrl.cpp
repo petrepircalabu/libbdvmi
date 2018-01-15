@@ -5,9 +5,6 @@
 int main(int argc, char* argv[])
 {
 	bdvmi::XenControl ctrl;
-
-	std::cout << "XEN version " << ctrl.xen_major_version << " : "
-		<< ctrl.xen_minor_version << std::endl;
-
+	std::cout << "XEN version " << ctrl.runtime_version.first << "." << ctrl.runtime_version.second << std::endl;
 	return 0;
 }
