@@ -27,15 +27,38 @@ typedef int xc_domain_pause_func_t ( xc_interface*, uint32_t );
 typedef int xc_domain_unpause_func_t ( xc_interface*, uint32_t );
 typedef int xc_domain_shutdown_func_t ( xc_interface *xch, uint32_t domid, int reason );
 
+struct xc_dominfo;
+typedef struct xc_dominfo xc_dominfo_t;
+
 namespace bdvmi {
 
-class XenControlFactory;
+template <typename T>
+struct DomainGetInfo;
+
+struct DomInfo;
+using DomainGetInfoFunc = DomainGetInfo<int(uint32_t domid, DomInfo& domInfo)>;
+
+struct DomInfo
+{
+public:
+	DomInfo();
+	~DomInfo();
+
+	uint32_t domid() const;
+	friend DomainGetInfoFunc;
+
+private:
+	xc_dominfo_t *pimpl_;
+};
 
 using DomainPauseFunc = std::function< utils::remove_first_arg< xc_domain_pause_func_t >::type >;
 using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpause_func_t >::type >;
 using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shutdown_func_t >::type >;
 
-class XenControl {
+class XenControlFactory;
+
+class XenControl
+{
 public:
 	static XenControl& instance();
 
@@ -56,10 +79,9 @@ public:
 	const DomainPauseFunc domainPause;
 	const DomainUnpauseFunc domainUnpause;
 	const DomainShutdownFunc domainShutdown;
+	const std::function<int(uint32_t domid, DomInfo& domInfo)> domainGetInfo;
 };
 
 } // namespace bdvmi
 
 #endif // __BDVMIXENCTRL_H_INCLUDED__
-
-

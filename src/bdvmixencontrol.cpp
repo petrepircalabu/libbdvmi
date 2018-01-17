@@ -19,8 +19,42 @@
 #include <xenctrl.h>
 #include <xen/xen.h>
 #include <iostream>
+#include <cerrno>
+#include <cstring>
 
 namespace bdvmi {
+
+DomInfo::DomInfo(): pimpl_(new xc_dominfo_t)
+{
+}
+
+DomInfo::~DomInfo()
+{
+	delete pimpl_;
+}
+
+uint32_t DomInfo::domid() const
+{
+	return pimpl_->domid;
+}
+
+template <>
+struct DomainGetInfo<int(uint32_t domid, DomInfo& domInfo)>
+
+{
+public:
+	DomainGetInfo(const std::function< int(uint32_t, unsigned int, xc_dominfo_t*) > &fun):
+		fun_(fun)
+	{
+	}
+
+	int operator()(uint32_t domid, DomInfo& domInfo)
+	{
+		return fun_(domid, 1, domInfo.pimpl_);
+	}
+private:
+	const std::function< int(uint32_t, unsigned int, xc_dominfo_t*) > fun_;
+};
 
 class XenControlFactory
 {
@@ -34,6 +68,7 @@ public:
 	auto getDomainPause() const -> DomainPauseFunc;
 	auto getDomainUnpause() const -> DomainUnpauseFunc;
 	auto getDomainShutdown() const -> DomainShutdownFunc;
+	auto getDomainGetInfo() const -> DomainGetInfoFunc;
 
 	std::pair< int, int > getVersion() const;
 
@@ -88,6 +123,13 @@ auto XenControlFactory::getDomainShutdown() const -> DomainShutdownFunc
 	return std::bind(f, getInterface(), _1, _2);
 }
 
+auto XenControlFactory::getDomainGetInfo() const -> DomainGetInfoFunc
+{
+	using namespace std::placeholders;
+	auto f = lookup< decltype(xc_domain_getinfo) > ( "xc_domain_getinfo", true);
+	return DomainGetInfoFunc(std::bind(f, getInterface(), _1, _2, _3));
+}
+
 XenControlFactory::XenControlFactory( )
     : libxcHandle_( nullptr ), xci_( nullptr )
 {
@@ -133,7 +175,8 @@ XenControl::XenControl( ) :
 	factory_(new XenControlFactory()),
 	runtimeVersion(factory_->getVersion()),
 	domainPause(factory_->getDomainPause()),
-	domainUnpause(factory_->getDomainUnpause())
+	domainUnpause(factory_->getDomainUnpause()),
+	domainGetInfo(factory_->getDomainGetInfo())
 {
 }
 
