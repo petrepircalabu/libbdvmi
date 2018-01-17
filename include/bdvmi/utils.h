@@ -16,6 +16,8 @@
 #ifndef __BDVMIUTILS_H_INCLUDED__
 #define __BDVMIUTILS_H_INCLUDED__
 
+#include <vector>
+
 namespace bdvmi {
 
 namespace utils {
@@ -26,7 +28,40 @@ struct remove_first_arg;
 template <typename R, typename A, typename... Args>
 struct remove_first_arg<R(A, Args... )>
 {
-    using type=R(Args... );
+	using type=R(Args... );
+};
+
+struct Observable
+{
+	void attach(std::function<void()> observer)
+	{
+		observers.push_back(observer);
+	}
+
+	void notify()
+	{
+		for (auto f:observers)
+		f();
+	}
+
+private:
+	std::vector<std::function<void()> > observers;
+};
+
+template <class> struct ObservableFunction;
+
+template <class R, class... Args>
+struct ObservableFunction<R(Args ...)> : public Observable
+{
+	ObservableFunction(std::function<R(Args ...)>f) : f_(f) {}
+
+	R operator()(Args ... args)
+	{
+		notify();
+		return f_(args...);
+	}
+private:
+	std::function<R(Args ...)> f_;
 };
 
 } // namespace utils
