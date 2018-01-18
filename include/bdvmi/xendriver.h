@@ -193,6 +193,11 @@ private:
 	uint32_t startTime_;
 	mutable bool patInitialized_;
 	mutable uint64_t msrPat_;
+
+private:
+	std::function<int()> pause_;
+	std::function<int()> unpause_;
+
 };
 
 } // namespace bdvmi

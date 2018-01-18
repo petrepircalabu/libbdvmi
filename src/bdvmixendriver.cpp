@@ -18,6 +18,7 @@
 #include "bdvmi/xendriver.h"
 #include "bdvmi/loghelper.h"
 #include "bdvmi/xeninlines.h"
+#include "bdvmi/xencontrol.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -73,7 +74,10 @@ static bool check_page( void *addr )
 XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool useAltP2m )
     : xci_( nullptr ), xsh_( nullptr ), domain_( domain ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
       useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
-      startTime_( -1 ), patInitialized_( false ), msrPat_( 0 )
+      startTime_( -1 ), patInitialized_( false ), msrPat_( 0 ),
+      pause_(std::bind(bdvmi::XenControl::instance().domainPause, domain)),
+      unpause_(std::bind(bdvmi::XenControl::instance().domainUnpause, domain))
+
 {
 	init( domain, hvmOnly );
 }
@@ -84,6 +88,8 @@ XenDriver::XenDriver( const std::string &uuid, LogHelper *logHelper, bool hvmOnl
       startTime_( -1 ), patInitialized_( false ), msrPat_( 0 )
 {
 	domain_ = getDomainId( uuid );
+	pause_ = std::bind(bdvmi::XenControl::instance().domainPause, domain_);
+	unpause_ = std::bind(bdvmi::XenControl::instance().domainUnpause, domain_);
 	init( domain_, hvmOnly );
 }
 
@@ -991,7 +997,7 @@ bool XenDriver::setRepOptimizations( bool enable )
 
 bool XenDriver::pause()
 {
-	if ( xc_domain_pause( xci_, domain_ ) != 0 ) {
+	if ( pause_() != 0 ) {
 
 		if ( logHelper_ )
 			logHelper_->error( std::string( "xc_domain_pause() failed: " ) + strerror( errno ) );
@@ -1004,7 +1010,7 @@ bool XenDriver::pause()
 
 bool XenDriver::unpause()
 {
-	if ( xc_domain_unpause( xci_, domain_ ) != 0 ) {
+	if ( unpause_() != 0 ) {
 
 		if ( logHelper_ )
 			logHelper_->error( std::string( "xc_domain_unpause() failed: " ) + strerror( errno ) );
