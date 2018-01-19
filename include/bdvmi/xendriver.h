@@ -25,6 +25,7 @@
 
 #include "driver.h"
 #include "xencache.h"
+#include "xencontrol.h"
 
 extern "C" {
 #include <xenstore.h>
@@ -197,6 +198,7 @@ private:
 private:
 	std::function<int()> pause_;
 	std::function<int()> unpause_;
+	std::function<int(int)> shutdown_;
 
 };
 

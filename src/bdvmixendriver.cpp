@@ -75,9 +75,9 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
     : xci_( nullptr ), xsh_( nullptr ), domain_( domain ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
       useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
       startTime_( -1 ), patInitialized_( false ), msrPat_( 0 ),
-      pause_(std::bind(bdvmi::XenControl::instance().domainPause, domain)),
-      unpause_(std::bind(bdvmi::XenControl::instance().domainUnpause, domain))
-
+      pause_(std::bind(XenControl::instance().domainPause, domain)),
+      unpause_(std::bind(XenControl::instance().domainUnpause, domain)),
+      shutdown_(std::bind(XenControl::instance().domainShutdown, domain, std::placeholders::_1))
 {
 	init( domain, hvmOnly );
 }
@@ -88,8 +88,9 @@ XenDriver::XenDriver( const std::string &uuid, LogHelper *logHelper, bool hvmOnl
       startTime_( -1 ), patInitialized_( false ), msrPat_( 0 )
 {
 	domain_ = getDomainId( uuid );
-	pause_ = std::bind(bdvmi::XenControl::instance().domainPause, domain_);
-	unpause_ = std::bind(bdvmi::XenControl::instance().domainUnpause, domain_);
+	pause_ = std::bind(XenControl::instance().domainPause, domain_);
+	unpause_ = std::bind(XenControl::instance().domainUnpause, domain_);
+	shutdown_ = std::bind(XenControl::instance().domainShutdown, domain_, std::placeholders::_1);
 	init( domain_, hvmOnly );
 }
 
@@ -614,7 +615,7 @@ bool XenDriver::writeToPhysAddress( unsigned long long address, void *buffer, si
 
 bool XenDriver::shutdown()
 {
-	if ( xc_domain_shutdown( xci_, domain_, SHUTDOWN_poweroff ) ) {
+	if ( shutdown_( SHUTDOWN_poweroff ) ) {
 
 		if ( logHelper_ )
 			logHelper_->error( std::string( "xc_domain_shutdown() failed: " ) + strerror( errno ) );
