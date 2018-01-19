@@ -20,12 +20,14 @@
 #include <memory>
 #include "bdvmi/utils.h"
 
+typedef unsigned long xen_pfn_t;
 struct xc_interface_core;
 typedef struct xc_interface_core xc_interface;
 
 typedef int xc_domain_pause_func_t ( xc_interface*, uint32_t );
 typedef int xc_domain_unpause_func_t ( xc_interface*, uint32_t );
 typedef int xc_domain_shutdown_func_t ( xc_interface *xch, uint32_t domid, int reason );
+typedef int xc_domain_maximum_gpfn_func_t ( xc_interface *xch, uint32_t domid, xen_pfn_t *gpfns );
 
 struct xc_dominfo;
 typedef struct xc_dominfo xc_dominfo_t;
@@ -57,6 +59,7 @@ private:
 using DomainPauseFunc = std::function< utils::remove_first_arg< xc_domain_pause_func_t >::type >;
 using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpause_func_t >::type >;
 using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shutdown_func_t >::type >;
+using DomainMaximumGpfnFunc = std::function< utils::remove_first_arg< xc_domain_maximum_gpfn_func_t >::type >;
 
 class XenControlFactory;
 
@@ -83,6 +86,7 @@ public:
 	const DomainUnpauseFunc domainUnpause;
 	const DomainShutdownFunc domainShutdown;
 	const std::function<int(uint32_t domid, DomInfo& domInfo)> domainGetInfo;
+	const DomainMaximumGpfnFunc domainMaximumGpfn;
 };
 
 } // namespace bdvmi

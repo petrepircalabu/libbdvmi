@@ -77,7 +77,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       startTime_( -1 ), patInitialized_( false ), msrPat_( 0 ),
       pause_(std::bind(XenControl::instance().domainPause, domain)),
       unpause_(std::bind(XenControl::instance().domainUnpause, domain)),
-      shutdown_(std::bind(XenControl::instance().domainShutdown, domain, std::placeholders::_1))
+      shutdown_(std::bind(XenControl::instance().domainShutdown, domain, std::placeholders::_1)),
+      maximum_gpfn_(std::bind(XenControl::instance().domainMaximumGpfn, domain, std::placeholders::_1))
 {
 	init( domain, hvmOnly );
 }
@@ -91,6 +92,7 @@ XenDriver::XenDriver( const std::string &uuid, LogHelper *logHelper, bool hvmOnl
 	pause_ = std::bind(XenControl::instance().domainPause, domain_);
 	unpause_ = std::bind(XenControl::instance().domainUnpause, domain_);
 	shutdown_ = std::bind(XenControl::instance().domainShutdown, domain_, std::placeholders::_1);
+	maximum_gpfn_ = std::bind(XenControl::instance().domainMaximumGpfn, domain_, std::placeholders::_1);
 	init( domain_, hvmOnly );
 }
 
@@ -722,7 +724,7 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 
 		xen_pfn_t max_gpfn = 0;
 
-		xc_domain_maximum_gpfn( xci_, domain_, &max_gpfn );
+		maximum_gpfn_( &max_gpfn );
 
 		for ( xen_pfn_t gfn = 0; gfn < max_gpfn; ++gfn )
 			xc_altp2m_set_mem_access( xci_, domain_, altp2mViewId_, gfn, XENMEM_access_rwx );

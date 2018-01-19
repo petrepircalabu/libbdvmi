@@ -81,6 +81,7 @@ public:
 	auto getDomainUnpause() const -> DomainUnpauseFunc;
 	auto getDomainShutdown() const -> DomainShutdownFunc;
 	auto getDomainGetInfo() const -> DomainGetInfoFunc;
+	auto getDomainMaximumGpfn() const -> DomainMaximumGpfnFunc;
 
 	std::pair< int, int > getVersion() const;
 
@@ -142,6 +143,16 @@ auto XenControlFactory::getDomainGetInfo() const -> DomainGetInfoFunc
 	return DomainGetInfoFunc(std::bind(f, getInterface(), _1, _2, _3));
 }
 
+
+auto XenControlFactory::getDomainMaximumGpfn() const -> DomainMaximumGpfnFunc
+{
+	static_assert( std::is_same <xc_domain_maximum_gpfn_func_t , decltype(xc_domain_maximum_gpfn)>::value , "" );
+
+	using namespace std::placeholders;
+	auto f = lookup< decltype(xc_domain_maximum_gpfn) > ("xc_domain_maximum_gpfn" , true);
+	return std::bind(f, getInterface(), _1, _2);
+}
+
 XenControlFactory::XenControlFactory( )
     : libxcHandle_( nullptr ), xci_( nullptr )
 {
@@ -188,7 +199,8 @@ XenControl::XenControl( ) :
 	runtimeVersion(factory_->getVersion()),
 	domainPause(factory_->getDomainPause()),
 	domainUnpause(factory_->getDomainUnpause()),
-	domainGetInfo(factory_->getDomainGetInfo())
+	domainGetInfo(factory_->getDomainGetInfo()),
+	domainMaximumGpfn(factory_->getDomainMaximumGpfn())
 {
 }
 

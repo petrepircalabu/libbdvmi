@@ -199,6 +199,7 @@ private:
 	std::function<int()> pause_;
 	std::function<int()> unpause_;
 	std::function<int(int)> shutdown_;
+	std::function<int(xen_pfn_t *)> maximum_gpfn_;
 
 };
 
