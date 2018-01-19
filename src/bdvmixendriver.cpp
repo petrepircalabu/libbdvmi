@@ -117,11 +117,9 @@ int32_t XenDriver::guestX86Mode( const Registers &regs )
 
 bool XenDriver::cpuCount( unsigned int &count ) const
 {
-	xc_dominfo_t info;
+	DomInfo info;
 
-	StatsCollector::instance().incStat( "xcDomainInfo" );
-
-	if ( xc_domain_getinfo( xci_, domain_, 1, &info ) != 1 ) {
+	if ( XenControl::instance().domainGetInfo( domain_, info ) != 1 ) {
 
 		if ( logHelper_ )
 			logHelper_->error( std::string( "xc_domain_getinfo() failed: " ) + strerror( errno ) );
@@ -129,7 +127,7 @@ bool XenDriver::cpuCount( unsigned int &count ) const
 		return false;
 	}
 
-	count = info.max_vcpu_id + 1;
+	count = info.max_vcpu_id() + 1;
 	// count = info.nr_online_vcpus;
 
 	return true;
@@ -635,18 +633,16 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 		throw std::runtime_error( "xc_interface_open() failed" );
 	}
 
-	xc_dominfo_t info;
+	DomInfo info;
 
-	StatsCollector::instance().incStat( "xcDomainInfo" );
-
-	if ( xc_domain_getinfo( xci_, domain, 1, &info ) != 1 ) {
+	if ( XenControl::instance().domainGetInfo( domain_, info ) != 1 ) {
 		cleanup();
 		throw std::runtime_error( "xc_domain_getinfo() failed" );
 	}
 
 	std::stringstream ss;
 
-	if ( hvmOnly && !info.hvm ) {
+	if ( hvmOnly && !info.hvm() ) {
 		cleanup();
 		ss << "Domain " << domain << " is not a HVM guest";
 		throw std::runtime_error( ss.str() );

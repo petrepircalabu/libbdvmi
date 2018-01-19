@@ -45,6 +45,9 @@ public:
 	~DomInfo();
 
 	uint32_t domid() const;
+	bool hvm() const;
+	unsigned int max_vcpu_id() const;
+
 	friend DomainGetInfoFunc;
 
 private:

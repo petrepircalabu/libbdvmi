@@ -14,6 +14,7 @@
 // License along with this library.
 
 #include "bdvmi/loghelper.h"
+#include "bdvmi/xencontrol.h"
 #include "bdvmi/xendomainwatcher.h"
 #include "bdvmi/xeninlines.h"
 #include <errno.h>
@@ -126,16 +127,16 @@ XenDomainWatcher::~XenDomainWatcher()
 bool XenDomainWatcher::getNewDomains( std::list<DomainInfo> &domains, char **vec )
 {
 	int domid = 1;
-	xc_dominfo_t dominfo;
+	DomInfo dominfo;
 	int err = -1;
 	bool ret = false;
 
-	while ( ( err = xc_domain_getinfo( xci_, domid, 1, &dominfo ) ) == 1 ) {
+	while ( ( err = XenControl::instance().domainGetInfo( domid, dominfo ) ) == 1 ) {
 
-		domid = dominfo.domid + 1;
+		domid = dominfo.domid() + 1;
 
 		std::stringstream ss;
-		ss << "/local/domain/" << dominfo.domid << "/vm-data/pre-resume";
+		ss << "/local/domain/" << dominfo.domid() << "/vm-data/pre-resume";
 
 		void *dummy = xs_read_timeout( xsh_, XBT_NULL, ss.str().c_str(), nullptr, 1 );
 
@@ -144,26 +145,26 @@ bool XenDomainWatcher::getNewDomains( std::list<DomainInfo> &domains, char **vec
 		if ( dummy ) {
 			free ( dummy );
 
-			if ( preResumeDomains_.find( dominfo.domid ) == preResumeDomains_.end() ) {
+			if ( preResumeDomains_.find( dominfo.domid() ) == preResumeDomains_.end() ) {
 				xs_watch( xsh_, ss.str().c_str(), postResumeToken_.c_str() );
-				preResumeDomains_.insert( dominfo.domid );
+				preResumeDomains_.insert( dominfo.domid() );
 			}
 
 			continue;
 
 		} else {
-			if ( preResumeDomains_.find( dominfo.domid ) != preResumeDomains_.end() ) {
+			if ( preResumeDomains_.find( dominfo.domid() ) != preResumeDomains_.end() ) {
 				xs_unwatch( xsh_, ss.str().c_str(), postResumeToken_.c_str() );
-				preResumeDomains_.erase( dominfo.domid );
+				preResumeDomains_.erase( dominfo.domid() );
 			}
 		}
 
-		if ( xs_is_domain_introduced( xsh_, dominfo.domid ) ) {
+		if ( xs_is_domain_introduced( xsh_, dominfo.domid() ) ) {
 
 			// New domain
-			if ( domIds_.find( dominfo.domid ) == domIds_.end() ) {
+			if ( domIds_.find( dominfo.domid() ) == domIds_.end() ) {
 				ss.str("");
-				ss << "/local/domain/" << dominfo.domid << "/name";
+				ss << "/local/domain/" << dominfo.domid() << "/name";
 
 				std::string path = ss.str();
 
@@ -172,11 +173,11 @@ bool XenDomainWatcher::getNewDomains( std::list<DomainInfo> &domains, char **vec
 				        xs_read_timeout( xsh_, XBT_NULL, path.c_str(), nullptr, 1 ) );
 
 				if ( name ) { // domain running or new domain w name set
-					if ( !isSelf( dominfo.domid ) ) {
-						DomainInfo domain( uuid( dominfo.domid ), DomainInfo::STATE_NEW, name );
+					if ( !isSelf( dominfo.domid() ) ) {
+						DomainInfo domain( uuid( dominfo.domid() ), DomainInfo::STATE_NEW, name );
 
 						domains.push_back( domain );
-						domIds_[dominfo.domid] = domain.uuid;
+						domIds_[dominfo.domid()] = domain.uuid;
 						ret = true;
 					}
 
@@ -184,7 +185,7 @@ bool XenDomainWatcher::getNewDomains( std::list<DomainInfo> &domains, char **vec
 
 				} else { // new domain, name not yet set
 					ss.str( "" );
-					ss << "dom" << dominfo.domid;
+					ss << "dom" << dominfo.domid();
 					xs_watch( xsh_, path.c_str(), ss.str().c_str() );
 				}
 			}
@@ -207,9 +208,9 @@ bool XenDomainWatcher::getNewDomains( std::list<DomainInfo> &domains, char **vec
 
 bool XenDomainWatcher::accessGranted()
 {
-	xc_dominfo_t dominfo;
+	DomInfo dominfo;
 
-	if ( xc_domain_getinfo( xci_, 1, 1, &dominfo ) == -1 &&
+	if ( XenControl::instance().domainGetInfo( 1, dominfo ) == -1 &&
 	     ( errno == EACCES || errno == EPERM ) )
 	     return false;
 

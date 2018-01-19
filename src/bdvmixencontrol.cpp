@@ -14,6 +14,7 @@
 // License along with this library.
 
 #include "bdvmi/xencontrol.h"
+#include "bdvmi/statscollector.h"
 #include <dlfcn.h>
 #include <type_traits>
 #include <xenctrl.h>
@@ -38,6 +39,16 @@ uint32_t DomInfo::domid() const
 	return pimpl_->domid;
 }
 
+bool DomInfo::hvm() const
+{
+	return pimpl_->hvm != 0;
+}
+
+unsigned int DomInfo::max_vcpu_id() const
+{
+	return pimpl_->max_vcpu_id;
+}
+
 template <>
 struct DomainGetInfo<int(uint32_t domid, DomInfo& domInfo)>
 
@@ -50,6 +61,7 @@ public:
 
 	int operator()(uint32_t domid, DomInfo& domInfo)
 	{
+		StatsCollector::instance().incStat( "xcDomainInfo" );
 		return fun_(domid, 1, domInfo.pimpl_);
 	}
 private:
