@@ -1079,7 +1079,7 @@ bool XenDriver::getPAT( unsigned short vcpu, uint64_t &pat ) const
 
 bool XenDriver::getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const
 {
-	int ret = xc_domain_pause( xci_, domain_ );
+	int ret = pause_();
 
 	if ( ret < 0 )
 		return false;
@@ -1088,7 +1088,7 @@ bool XenDriver::getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const
 	ret = xc_domain_hvm_getcontext( xci_, domain_, 0, 0 );
 
 	if ( ret < 0 ) {
-		xc_domain_unpause( xci_, domain_ );
+		unpause_();
 		return false;
 	}
 
@@ -1100,7 +1100,7 @@ bool XenDriver::getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const
 	if ( ret < 0 ) {
 		if ( logHelper_ )
 			logHelper_->error( std::string( "xc_domain_hvm_getcontext() failed: " ) + strerror( errno ) );
-		xc_domain_unpause( xci_, domain_ );
+		unpause_();
 		return false;
 	}
 
@@ -1124,7 +1124,7 @@ bool XenDriver::getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const
 		off += descriptor->length;
 	}
 
-	xc_domain_unpause( xci_, domain_ );
+	unpause_();
 
 	return found;
 }
