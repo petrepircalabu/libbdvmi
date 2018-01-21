@@ -93,7 +93,8 @@ XenEventManager::XenEventManager( XenDriver &driver, LogHelper *logHelper, bool 
     : driver_( driver ), xci_( driver.nativeHandle() ), domain_( driver.id() ), stop_( false ), xce_( nullptr ),
       port_( -1 ), xsh_( nullptr ), evtchnPort_( 0 ), ringPage_( nullptr ), memAccessOn_( false ), evtchnOn_( false ),
       evtchnBindOn_( false ), guestStillRunning_( true ), logHelper_( logHelper ), firstReleaseWatch_( true ),
-      firstXenServerWatch_( true ), useAltP2m_( useAltP2m )
+      firstXenServerWatch_( true ), useAltP2m_( useAltP2m ),
+      debug_control_(std::bind(XenControl::instance().domainDebugControl, domain_, std::placeholders::_1, std::placeholders::_2))
 {
 	initXenStore();
 
@@ -154,7 +155,7 @@ void XenEventManager::cleanup()
 		driver_.cpuCount( cpus );
 
 		for ( unsigned int vcpu = 0; vcpu < cpus; ++vcpu )
-			xc_domain_debug_control( xci_, domain_, vcpu, XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_OFF );
+			debug_control_( vcpu, XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_OFF );
 	}
 
 	/* Tear down domain xenaccess in Xen */

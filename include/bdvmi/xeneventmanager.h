@@ -37,6 +37,7 @@ extern "C" {
 }
 
 #include "xeninlines.h"
+#include "xencontrol.h"
 
 namespace bdvmi {
 
@@ -130,6 +131,7 @@ private:
 #ifdef DEBUG_DUMP_EVENTS
 	std::ofstream eventsFile_;
 #endif
+	std::function<int(uint32_t, uint32_t)> debug_control_;
 };
 
 } // namespace bdvmi
