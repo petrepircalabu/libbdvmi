@@ -78,7 +78,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       pause_(std::bind(XenControl::instance().domainPause, domain)),
       unpause_(std::bind(XenControl::instance().domainUnpause, domain)),
       shutdown_(std::bind(XenControl::instance().domainShutdown, domain, std::placeholders::_1)),
-      maximum_gpfn_(std::bind(XenControl::instance().domainMaximumGpfn, domain, std::placeholders::_1))
+      maximum_gpfn_(std::bind(XenControl::instance().domainMaximumGpfn, domain, std::placeholders::_1)),
+      get_tsc_info_(std::bind(XenControl::instance().domainGetTscInfo, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
 {
 	init( domain, hvmOnly );
 }
@@ -93,6 +94,7 @@ XenDriver::XenDriver( const std::string &uuid, LogHelper *logHelper, bool hvmOnl
 	unpause_ = std::bind(XenControl::instance().domainUnpause, domain_);
 	shutdown_ = std::bind(XenControl::instance().domainShutdown, domain_, std::placeholders::_1);
 	maximum_gpfn_ = std::bind(XenControl::instance().domainMaximumGpfn, domain_, std::placeholders::_1);
+	get_tsc_info_ = std::bind(XenControl::instance().domainGetTscInfo, domain_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 	init( domain_, hvmOnly );
 }
 
@@ -142,7 +144,7 @@ bool XenDriver::tscSpeed( unsigned long long &speed ) const
 
 	StatsCollector::instance().incStat( "xcTscInfo" );
 
-	if ( xc_domain_get_tsc_info( xci_, domain_, &tsc_mode, &elapsed_nsec, &gtsc_khz, &incarnation ) != 0 ) {
+	if ( get_tsc_info_( &tsc_mode, &elapsed_nsec, &gtsc_khz, &incarnation ) != 0 ) {
 		if ( logHelper_ )
 			logHelper_->error( std::string( "xc_domain_get_tsc_info() failed: " ) + strerror( errno ) );
 

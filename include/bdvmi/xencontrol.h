@@ -29,6 +29,7 @@ typedef int xc_domain_unpause_func_t ( xc_interface*, uint32_t );
 typedef int xc_domain_shutdown_func_t ( xc_interface *xch, uint32_t domid, int reason );
 typedef int xc_domain_maximum_gpfn_func_t ( xc_interface *xch, uint32_t domid, xen_pfn_t *gpfns );
 typedef int xc_domain_debug_control_func_t (xc_interface *xch, uint32_t domid, uint32_t sop, uint32_t vcpu);
+typedef int xc_domain_get_tsc_info_func_t (xc_interface *xch, uint32_t domid, uint32_t *tsc_mode, uint64_t *elapsed_nsec, uint32_t *gtsc_khz, uint32_t *incarnation);
 
 struct xc_dominfo;
 typedef struct xc_dominfo xc_dominfo_t;
@@ -62,6 +63,7 @@ using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpa
 using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shutdown_func_t >::type >;
 using DomainMaximumGpfnFunc = std::function< utils::remove_first_arg< xc_domain_maximum_gpfn_func_t >::type >;
 using DomainDebugControlFunc = std::function< utils::remove_first_arg< xc_domain_debug_control_func_t >::type >;
+using DomainGetTscInfoFunc = std::function< utils::remove_first_arg< xc_domain_get_tsc_info_func_t >::type >;
 
 class XenControlFactory;
 
@@ -90,6 +92,7 @@ public:
 	const std::function<int(uint32_t domid, DomInfo& domInfo)> domainGetInfo;
 	const DomainMaximumGpfnFunc domainMaximumGpfn;
 	const DomainDebugControlFunc domainDebugControl;
+	const DomainGetTscInfoFunc domainGetTscInfo;
 };
 
 } // namespace bdvmi

@@ -200,7 +200,7 @@ private:
 	std::function<int()> unpause_;
 	std::function<int(int)> shutdown_;
 	std::function<int(xen_pfn_t *)> maximum_gpfn_;
-
+	std::function<int(uint32_t *, uint64_t *, uint32_t *, uint32_t *)> get_tsc_info_;
 };
 
 } // namespace bdvmi

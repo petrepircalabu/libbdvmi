@@ -83,6 +83,7 @@ public:
 	auto getDomainGetInfo() const -> DomainGetInfoFunc;
 	auto getDomainMaximumGpfn() const -> DomainMaximumGpfnFunc;
 	auto getDomainDebugControl() const -> DomainDebugControlFunc;
+	auto getDomainGetTscInfo() const -> DomainGetTscInfoFunc;
 
 	std::pair< int, int > getVersion() const;
 
@@ -163,6 +164,14 @@ auto XenControlFactory::getDomainDebugControl() const -> DomainDebugControlFunc
 	return std::bind(f, getInterface(), _1, _2, _3);
 }
 
+auto XenControlFactory::getDomainGetTscInfo() const -> DomainGetTscInfoFunc
+{
+	static_assert( std::is_same <xc_domain_get_tsc_info_func_t, decltype(xc_domain_get_tsc_info)>::value, "");
+	using namespace std::placeholders;
+	auto f = lookup< decltype(xc_domain_get_tsc_info) > ("xc_domain_get_tsc_info", true);
+	return std::bind(f, getInterface(), _1, _2, _3, _4, _5);
+}
+
 XenControlFactory::XenControlFactory( )
     : libxcHandle_( nullptr ), xci_( nullptr )
 {
@@ -210,7 +219,8 @@ XenControl::XenControl( ) :
 	domainPause(factory_->getDomainPause()),
 	domainUnpause(factory_->getDomainUnpause()),
 	domainGetInfo(factory_->getDomainGetInfo()),
-	domainMaximumGpfn(factory_->getDomainMaximumGpfn())
+	domainMaximumGpfn(factory_->getDomainMaximumGpfn()),
+	domainGetTscInfo(factory_->getDomainGetTscInfo())
 {
 }
 
