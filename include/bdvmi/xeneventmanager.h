@@ -132,6 +132,7 @@ private:
 	std::ofstream eventsFile_;
 #endif
 	std::function<int(uint32_t, uint32_t)> debug_control_;
+	std::function<int(unsigned int)> set_access_required_;
 };
 
 } // namespace bdvmi

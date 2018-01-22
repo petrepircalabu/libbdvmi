@@ -94,7 +94,8 @@ XenEventManager::XenEventManager( XenDriver &driver, LogHelper *logHelper, bool 
       port_( -1 ), xsh_( nullptr ), evtchnPort_( 0 ), ringPage_( nullptr ), memAccessOn_( false ), evtchnOn_( false ),
       evtchnBindOn_( false ), guestStillRunning_( true ), logHelper_( logHelper ), firstReleaseWatch_( true ),
       firstXenServerWatch_( true ), useAltP2m_( useAltP2m ),
-      debug_control_(std::bind(XenControl::instance().domainDebugControl, domain_, std::placeholders::_1, std::placeholders::_2))
+      debug_control_(std::bind(XenControl::instance().domainDebugControl, domain_, std::placeholders::_1, std::placeholders::_2)),
+      set_access_required_(std::bind(XenControl::instance().domainSetAccessRequired, domain_, std::placeholders::_1))
 {
 	initXenStore();
 
@@ -801,7 +802,7 @@ void XenEventManager::initMemAccess()
 
 	initEventChannels();
 
-	xc_domain_set_access_required( xci_, domain_, 0 );
+	set_access_required_( 0 );
 
 
 #if __XEN_LATEST_INTERFACE_VERSION__ >= 0x00040900
