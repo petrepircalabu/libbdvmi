@@ -31,6 +31,8 @@ typedef int xc_domain_maximum_gpfn_func_t ( xc_interface *xch, uint32_t domid, x
 typedef int xc_domain_debug_control_func_t (xc_interface *xch, uint32_t domid, uint32_t sop, uint32_t vcpu);
 typedef int xc_domain_get_tsc_info_func_t (xc_interface *xch, uint32_t domid, uint32_t *tsc_mode, uint64_t *elapsed_nsec, uint32_t *gtsc_khz, uint32_t *incarnation);
 typedef int xc_domain_set_access_required_func_t (xc_interface *xch, uint32_t domid, unsigned int required);
+typedef int xc_domain_hvm_getcontext_func_t(xc_interface *xch, uint32_t domid, uint8_t *ctxt_buf, uint32_t size);
+typedef int xc_domain_hvm_getcontext_partial_func_t(xc_interface *xch, uint32_t domid, uint16_t typecode, uint16_t instance, void *ctxt_buf, uint32_t size);
 
 struct xc_dominfo;
 typedef struct xc_dominfo xc_dominfo_t;
@@ -66,6 +68,8 @@ using DomainMaximumGpfnFunc = std::function< utils::remove_first_arg< xc_domain_
 using DomainDebugControlFunc = std::function< utils::remove_first_arg< xc_domain_debug_control_func_t >::type >;
 using DomainGetTscInfoFunc = std::function< utils::remove_first_arg< xc_domain_get_tsc_info_func_t >::type >;
 using DomainSetAccessRequiredFunc = std::function< utils::remove_first_arg< xc_domain_set_access_required_func_t >::type >;
+using DomainHvmGetContextFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_func_t >::type >;
+using DomainHvmGetContextPartialFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
 
 
 class XenControlFactory;
@@ -97,6 +101,8 @@ public:
 	const DomainDebugControlFunc domainDebugControl;
 	const DomainGetTscInfoFunc domainGetTscInfo;
 	const DomainSetAccessRequiredFunc domainSetAccessRequired;
+	const DomainHvmGetContextFunc domainHvmGetContext;
+	const DomainHvmGetContextPartialFunc domainHvmGetContextPartial;
 };
 
 } // namespace bdvmi

@@ -201,6 +201,9 @@ private:
 	std::function<int(int)> shutdown_;
 	std::function<int(xen_pfn_t *)> maximum_gpfn_;
 	std::function<int(uint32_t *, uint64_t *, uint32_t *, uint32_t *)> get_tsc_info_;
+	std::function<int(uint8_t *, uint32_t)> hvm_getcontext_;
+	std::function<int(uint16_t, uint16_t, void *, uint32_t)> hvm_getcontext_partial_;
+
 };
 
 } // namespace bdvmi

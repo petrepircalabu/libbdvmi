@@ -85,6 +85,8 @@ public:
 	auto getDomainDebugControl() const -> DomainDebugControlFunc;
 	auto getDomainGetTscInfo() const -> DomainGetTscInfoFunc;
 	auto getDomainSetAccessRequired() const -> DomainSetAccessRequiredFunc;
+	auto getDomainHvmGetContext() const -> DomainHvmGetContextFunc;
+	auto getDomainHvmGetContextPartial() const -> DomainHvmGetContextPartialFunc;
 
 	std::pair< int, int > getVersion() const;
 
@@ -181,6 +183,22 @@ auto XenControlFactory::getDomainSetAccessRequired() const -> DomainSetAccessReq
 	return std::bind(f, getInterface(), _1, _2);
 }
 
+auto XenControlFactory::getDomainHvmGetContext() const -> DomainHvmGetContextFunc
+{
+	static_assert( std::is_same <xc_domain_hvm_getcontext_func_t, decltype(xc_domain_hvm_getcontext)>::value, "");
+	using namespace std::placeholders;
+	auto f = lookup< decltype(xc_domain_hvm_getcontext) > ("xc_domain_hvm_getcontext", true);
+	return std::bind(f, getInterface(), _1, _2, _3);
+}
+
+auto XenControlFactory::getDomainHvmGetContextPartial() const -> DomainHvmGetContextPartialFunc
+{
+	static_assert( std::is_same <xc_domain_hvm_getcontext_partial_func_t, decltype(xc_domain_hvm_getcontext_partial)>::value, "");
+	using namespace std::placeholders;
+	auto f = lookup< decltype(xc_domain_hvm_getcontext_partial) > ("xc_domain_hvm_getcontext_partial", true);
+	return std::bind(f, getInterface(), _1, _2, _3, _4, _5);
+}
+
 XenControlFactory::XenControlFactory( )
     : libxcHandle_( nullptr ), xci_( nullptr )
 {
@@ -230,7 +248,9 @@ XenControl::XenControl( ) :
 	domainGetInfo(factory_->getDomainGetInfo()),
 	domainMaximumGpfn(factory_->getDomainMaximumGpfn()),
 	domainGetTscInfo(factory_->getDomainGetTscInfo()),
-	domainSetAccessRequired(factory_->getDomainSetAccessRequired())
+	domainSetAccessRequired(factory_->getDomainSetAccessRequired()),
+	domainHvmGetContext(factory_->getDomainHvmGetContext()),
+	domainHvmGetContextPartial(factory_->getDomainHvmGetContextPartial())
 {
 }
 

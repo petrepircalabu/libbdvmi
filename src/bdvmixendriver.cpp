@@ -79,7 +79,9 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       unpause_(std::bind(XenControl::instance().domainUnpause, domain)),
       shutdown_(std::bind(XenControl::instance().domainShutdown, domain, std::placeholders::_1)),
       maximum_gpfn_(std::bind(XenControl::instance().domainMaximumGpfn, domain, std::placeholders::_1)),
-      get_tsc_info_(std::bind(XenControl::instance().domainGetTscInfo, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
+      get_tsc_info_(std::bind(XenControl::instance().domainGetTscInfo, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
+      hvm_getcontext_(std::bind(XenControl::instance().domainHvmGetContext, domain, std::placeholders::_1, std::placeholders::_2)),
+      hvm_getcontext_partial_(std::bind(XenControl::instance().domainHvmGetContextPartial, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
 {
 	init( domain, hvmOnly );
 }
@@ -361,7 +363,7 @@ bool XenDriver::registers( unsigned short vcpu, Registers &regs ) const
 
 	struct hvm_hw_cpu hwCpu;
 
-	if ( xc_domain_hvm_getcontext_partial( xci_, domain_, HVM_SAVE_CODE( CPU ), vcpu, &hwCpu, sizeof( hwCpu ) ) !=
+	if ( hvm_getcontext_partial_( HVM_SAVE_CODE( CPU ), vcpu, &hwCpu, sizeof( hwCpu ) ) !=
 	     0 ) {
 
 		if ( logHelper_ ) {
@@ -1056,8 +1058,7 @@ bool XenDriver::getPAT( unsigned short vcpu, uint64_t &pat ) const
 
 	struct hvm_hw_mtrr hwMtrr;
 
-	if ( xc_domain_hvm_getcontext_partial( xci_, domain_, HVM_SAVE_CODE( MTRR ),
-                                               vcpu, &hwMtrr, sizeof( hwMtrr ) ) != 0 ) {
+	if ( hvm_getcontext_partial_( HVM_SAVE_CODE( MTRR ), vcpu, &hwMtrr, sizeof( hwMtrr ) ) != 0 ) {
 		if ( logHelper_ ) {
 			std::stringstream ss;
 			ss << "xc_domain_hvm_getcontext_partial() (vcpu = " << vcpu << ") failed: "
@@ -1089,7 +1090,7 @@ bool XenDriver::getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const
 		return false;
 
 	// Get buffer length (0 argument)
-	ret = xc_domain_hvm_getcontext( xci_, domain_, 0, 0 );
+	ret = hvm_getcontext_( 0, 0 );
 
 	if ( ret < 0 ) {
 		unpause_();
@@ -1099,7 +1100,7 @@ bool XenDriver::getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const
 	uint32_t len = ret;
 	std::vector<uint8_t> buf( len );
 
-	ret = xc_domain_hvm_getcontext( xci_, domain_, &buf[0], len );
+	ret = hvm_getcontext_( &buf[0], len );
 
 	if ( ret < 0 ) {
 		if ( logHelper_ )
