@@ -89,6 +89,7 @@ public:
 	auto getDomainHvmGetContextPartial() const -> DomainHvmGetContextPartialFunc;
 
 	std::pair< int, int > getVersion() const;
+	const std::string getCaps() const;
 
 protected:
 	xc_interface* getInterface() const
@@ -223,6 +224,16 @@ std::pair< int, int > XenControlFactory::getVersion() const
 	return std::make_pair<int, int>(ver >> 16, ver & ((1 << 16) - 1));
 }
 
+const std::string XenControlFactory::getCaps() const
+{
+	xen_capabilities_info_t caps;
+
+	if ( version_( xci_, XENVER_capabilities, &caps /*, sizeof( caps ) */ ) != 0 )
+		throw std::runtime_error( "Could not get Xen capabilities" );
+
+	return std::string(caps);
+}
+
 XenControlFactory::~XenControlFactory( )
 {
 	if ( !libxcHandle_ )
@@ -243,6 +254,7 @@ XenControl& XenControl::instance()
 XenControl::XenControl( ) :
 	factory_(new XenControlFactory()),
 	runtimeVersion(factory_->getVersion()),
+	caps(factory_->getCaps()),
 	domainPause(factory_->getDomainPause()),
 	domainUnpause(factory_->getDomainUnpause()),
 	domainGetInfo(factory_->getDomainGetInfo()),

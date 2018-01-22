@@ -89,6 +89,7 @@ private:
 
 public:
 	const std::pair<int, int> runtimeVersion;
+	const std::string caps;
 
 	/*
 	 * DOMAIN MANAGEMENT FUNCTIONS

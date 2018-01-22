@@ -656,18 +656,10 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 
 	// xc_domain_set_cores_per_socket( xci_, domain, 10 );
 
-	xen_capabilities_info_t caps;
+	xenVersionMajor_ = XenControl::instance().runtimeVersion.first;
+	xenVersionMinor_ = XenControl::instance().runtimeVersion.second;
 
-	if ( xc_version( xci_, XENVER_capabilities, &caps /*, sizeof( caps ) */ ) != 0 ) {
-		cleanup();
-		throw std::runtime_error( "Could not get Xen capabilities" );
-	}
-
-	long xenVersion = xc_version( xci_, XENVER_version, nullptr );
-	xenVersionMajor_ = xenVersion >> 16;
-	xenVersionMinor_ = xenVersion & 0xFF;
-
-	guestWidth_ = strstr( caps, "x86_64" ) ? 8 : 4;
+	guestWidth_ = ( XenControl::instance().caps.find( "x86_64" ) != std::string::npos ) ? 8 : 4;
 
 	if ( !xsh_ ) {
 		xsh_ = xs_open( 0 );
