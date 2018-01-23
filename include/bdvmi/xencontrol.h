@@ -16,11 +16,16 @@
 #ifndef __BDVMIXENCTRL_H_INCLUDED__
 #define __BDVMIXENCTRL_H_INCLUDED__
 
+#ifndef __XEN_TOOLS__
+#define __XEN_TOOLS__ 1
+#endif
+
 #include <functional>
 #include <memory>
 #include "bdvmi/utils.h"
 
-typedef unsigned long xen_pfn_t;
+#include <xen/version.h>
+
 struct xc_interface_core;
 typedef struct xc_interface_core xc_interface;
 
