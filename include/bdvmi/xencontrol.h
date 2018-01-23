@@ -66,6 +66,23 @@ private:
 	xc_dominfo_t *pimpl_;
 };
 
+class XenDomainHandle
+{
+public:
+	XenDomainHandle(const xen_domain_handle_t &handle);
+	XenDomainHandle(const std::string &str);
+
+	bool operator==(const std::string &other) const;
+
+	friend std::ostream& operator<<(std::ostream &out, const XenDomainHandle& uuid);
+
+protected:
+	static std::string UuidToString(const xen_domain_handle_t &handle);
+
+private:
+	std::string uuid_;
+};
+
 using DomainPauseFunc = std::function< utils::remove_first_arg< xc_domain_pause_func_t >::type >;
 using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpause_func_t >::type >;
 using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shutdown_func_t >::type >;
@@ -95,6 +112,7 @@ private:
 public:
 	const std::pair<int, int> runtimeVersion;
 	const std::string caps;
+	const XenDomainHandle uuid;
 
 	/*
 	 * DOMAIN MANAGEMENT FUNCTIONS

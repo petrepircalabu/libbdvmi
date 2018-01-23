@@ -17,10 +17,10 @@
 #define __BDVMIXENDOMAINWATCHER_H_INCLUDED__
 
 #include "domainwatcher.h"
+#include "xencontrol.h"
 #include <map>
 
 extern "C" {
-#include <xenctrl.h>
 #include <xen/xen-compat.h>
 #if __XEN_LATEST_INTERFACE_VERSION__ < 0x00040600
 #error unsupported Xen version
@@ -64,8 +64,7 @@ private:
 
 private:
 	xs_handle *xsh_;
-	xc_interface *xci_;
-	std::string ownUuid_;
+	const XenDomainHandle ownUuid_;
 	std::string controlXenStorePath_;
 	const std::string introduceToken_;
 	const std::string releaseToken_;

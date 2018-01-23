@@ -22,6 +22,7 @@
 #include <iostream>
 #include <cerrno>
 #include <cstring>
+#include <sstream>
 
 namespace bdvmi {
 
@@ -68,6 +69,68 @@ private:
 	const std::function< int(uint32_t, unsigned int, xc_dominfo_t*) > fun_;
 };
 
+XenDomainHandle::XenDomainHandle(const xen_domain_handle_t &handle):
+	uuid_(XenDomainHandle::UuidToString(handle))
+{
+}
+
+XenDomainHandle::XenDomainHandle(const std::string &str):
+	uuid_(str)
+{
+}
+
+std::string XenDomainHandle::UuidToString(const xen_domain_handle_t &handle)
+{
+	std::stringstream ss;
+	ss.setf( std::ios::hex, std::ios::basefield );
+
+	for ( int i = 0; i < 4; ++i ) {
+		ss << ( handle[i] >> 4 );
+		ss << ( handle[i] & 0x0f );
+	}
+
+	ss << '-';
+
+	for ( int i = 4; i < 6; ++i ) {
+		ss << ( handle[i] >> 4 );
+		ss << ( handle[i] & 0x0f );
+	}
+
+	ss << '-';
+
+	for ( int i = 6; i < 8; ++i ) {
+		ss << ( handle[i] >> 4 );
+		ss << ( handle[i] & 0x0f );
+	}
+
+	ss << '-';
+
+	for ( int i = 8; i < 10; ++i ) {
+		ss << ( handle[i] >> 4 );
+		ss << ( handle[i] & 0x0f );
+	}
+
+	ss << '-';
+
+	for ( int i = 10; i < 16; ++i ) {
+		ss << ( handle[i] >> 4 );
+		ss << ( handle[i] & 0x0f );
+	}
+
+	return ss.str();
+}
+
+bool XenDomainHandle::operator==(const std::string &str) const
+{
+	return uuid_ == str;
+}
+
+std::ostream& operator<<(std::ostream &out, const XenDomainHandle& uuid)
+{
+	out << uuid.uuid_;
+	return out;
+}
+
 class XenControlFactory
 {
 public:
@@ -90,6 +153,7 @@ public:
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
+	const XenDomainHandle getUuid() const;
 
 protected:
 	xc_interface* getInterface() const
@@ -228,10 +292,20 @@ const std::string XenControlFactory::getCaps() const
 {
 	xen_capabilities_info_t caps;
 
-	if ( version_( xci_, XENVER_capabilities, &caps /*, sizeof( caps ) */ ) != 0 )
+	if ( version_( xci_, XENVER_capabilities, &caps ) != 0 )
 		throw std::runtime_error( "Could not get Xen capabilities" );
 
 	return std::string(caps);
+}
+
+const XenDomainHandle XenControlFactory::getUuid() const
+{
+	xen_domain_handle_t uuid;
+
+	if ( version_( xci_, XENVER_guest_handle, &uuid ) != 0 )
+		throw std::runtime_error( "Could not get local domain UUID" );
+
+	return XenDomainHandle(uuid);
 }
 
 XenControlFactory::~XenControlFactory( )
@@ -255,6 +329,7 @@ XenControl::XenControl( ) :
 	factory_(new XenControlFactory()),
 	runtimeVersion(factory_->getVersion()),
 	caps(factory_->getCaps()),
+	uuid(factory_->getUuid()),
 	domainPause(factory_->getDomainPause()),
 	domainUnpause(factory_->getDomainUnpause()),
 	domainGetInfo(factory_->getDomainGetInfo()),

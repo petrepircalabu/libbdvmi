@@ -26,49 +26,8 @@
 
 namespace bdvmi {
 
-std::string uuidToString( const xen_domain_handle_t &uuid )
-{
-	std::stringstream ss;
-	ss.setf( std::ios::hex, std::ios::basefield );
-
-	for ( int i = 0; i < 4; ++i ) {
-		ss << ( uuid[i] >> 4 );
-		ss << ( uuid[i] & 0x0f );
-	}
-
-	ss << '-';
-
-	for ( int i = 4; i < 6; ++i ) {
-		ss << ( uuid[i] >> 4 );
-		ss << ( uuid[i] & 0x0f );
-	}
-
-	ss << '-';
-
-	for ( int i = 6; i < 8; ++i ) {
-		ss << ( uuid[i] >> 4 );
-		ss << ( uuid[i] & 0x0f );
-	}
-
-	ss << '-';
-
-	for ( int i = 8; i < 10; ++i ) {
-		ss << ( uuid[i] >> 4 );
-		ss << ( uuid[i] & 0x0f );
-	}
-
-	ss << '-';
-
-	for ( int i = 10; i < 16; ++i ) {
-		ss << ( uuid[i] >> 4 );
-		ss << ( uuid[i] & 0x0f );
-	}
-
-	return ss.str();
-}
-
 XenDomainWatcher::XenDomainWatcher( LogHelper *logHelper )
-    : xsh_( nullptr ), xci_( nullptr ), introduceToken_( "introduce" ), releaseToken_( "release" ), controlToken_( "control" ),
+    : xsh_( nullptr ), ownUuid_(XenControl::instance().uuid), introduceToken_( "introduce" ), releaseToken_( "release" ), controlToken_( "control" ),
       postResumeToken_("post-resume"), logHelper_( logHelper ), firstUninitWrite_( true ), ownId_( -1 ), keyCreated_( false )
 {
 	xsh_ = xs_open( 0 );
@@ -87,25 +46,13 @@ XenDomainWatcher::XenDomainWatcher( LogHelper *logHelper )
 		throw std::runtime_error( "xs_watch() failed" );
 	}
 
-	xci_ = xc_interface_open( nullptr, nullptr, 0 );
-
-	if ( !xci_ ) {
-		xs_unwatch( xsh_, "@introduceDomain", introduceToken_.c_str() );
-		xs_unwatch( xsh_, "@releaseDomain", releaseToken_.c_str() );
-		xs_close( xsh_ );
-		throw std::runtime_error( std::string("xc_interface_open() failed: ") + strerror( errno ) );
-	}
-
 	// Retrieving the UUID can also be achieved under Linux by simply reading
 	// /sys/hypervisor/uuid.
 
-	xen_domain_handle_t uuid;
-
-	if ( !xc_version( xci_, XENVER_guest_handle, &uuid ) ) {
-		ownUuid_ = uuidToString( uuid );
-
-		if ( logHelper_ )
-			logHelper_->info( std::string( "SVA UUID: " ) + ownUuid_ );
+	if ( logHelper_ ) {
+		std::stringstream ss;
+		ss << "SVA UUID: " << ownUuid_;
+		logHelper_->info( ss.str() );
 	}
 }
 
@@ -120,8 +67,6 @@ XenDomainWatcher::~XenDomainWatcher()
 	}
 
 	xs_close( xsh_ );
-
-	xc_interface_close( xci_ );
 }
 
 bool XenDomainWatcher::getNewDomains( std::list<DomainInfo> &domains, char **vec )
@@ -343,7 +288,7 @@ std::string XenDomainWatcher::uuid( domid_t domain ) const
 
 bool XenDomainWatcher::isSelf( domid_t domain )
 {
-	if ( uuid( domain ) == ownUuid_ ) {
+	if ( ownUuid_ == uuid( domain ) ) {
 		ownId_ = domain;
 		initControlKey( ownId_ );
 		return true;
