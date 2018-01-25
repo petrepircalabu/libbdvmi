@@ -26,6 +26,8 @@
 
 namespace bdvmi {
 
+using namespace std::placeholders;
+
 DomInfo::DomInfo(): pimpl_(new xc_dominfo_t)
 {
 }
@@ -183,7 +185,6 @@ auto XenControlFactory::getDomainPause() const -> DomainPauseFunc
 {
 	static_assert( std::is_same <xc_domain_pause_func_t , decltype(xc_domain_pause)>::value , "" );
 
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_pause) > ( "xc_domain_pause", true);
 	return std::bind(f, getInterface(), _1);
 }
@@ -192,7 +193,6 @@ auto XenControlFactory::getDomainUnpause() const -> DomainUnpauseFunc
 {
 	static_assert( std::is_same <xc_domain_unpause_func_t , decltype(xc_domain_unpause)>::value , "" );
 
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_pause) > ( "xc_domain_unpause", true);
 	return std::bind(f, getInterface(), _1);
 }
@@ -201,14 +201,12 @@ auto XenControlFactory::getDomainShutdown() const -> DomainShutdownFunc
 {
 	static_assert( std::is_same <xc_domain_shutdown_func_t , decltype(xc_domain_shutdown)>::value , "" );
 
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_shutdown) > ( "xc_domain_shutdown", true);
 	return std::bind(f, getInterface(), _1, _2);
 }
 
 auto XenControlFactory::getDomainGetInfo() const -> DomainGetInfoFunc
 {
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_getinfo) > ( "xc_domain_getinfo", true);
 	return DomainGetInfoFunc(std::bind(f, getInterface(), _1, _2, _3));
 }
@@ -218,7 +216,6 @@ auto XenControlFactory::getDomainMaximumGpfn() const -> DomainMaximumGpfnFunc
 {
 	static_assert( std::is_same <xc_domain_maximum_gpfn_func_t , decltype(xc_domain_maximum_gpfn)>::value , "" );
 
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_maximum_gpfn) > ("xc_domain_maximum_gpfn" , true);
 	return std::bind(f, getInterface(), _1, _2);
 }
@@ -227,7 +224,6 @@ auto XenControlFactory::getDomainDebugControl() const -> DomainDebugControlFunc
 {
 	static_assert( std::is_same <xc_domain_debug_control_func_t, decltype(xc_domain_debug_control)>::value, "");
 
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_debug_control) > ("xc_domain_debug_control", true);
 	return std::bind(f, getInterface(), _1, _2, _3);
 }
@@ -235,7 +231,6 @@ auto XenControlFactory::getDomainDebugControl() const -> DomainDebugControlFunc
 auto XenControlFactory::getDomainGetTscInfo() const -> DomainGetTscInfoFunc
 {
 	static_assert( std::is_same <xc_domain_get_tsc_info_func_t, decltype(xc_domain_get_tsc_info)>::value, "");
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_get_tsc_info) > ("xc_domain_get_tsc_info", true);
 	return std::bind(f, getInterface(), _1, _2, _3, _4, _5);
 }
@@ -243,7 +238,6 @@ auto XenControlFactory::getDomainGetTscInfo() const -> DomainGetTscInfoFunc
 auto XenControlFactory::getDomainSetAccessRequired() const -> DomainSetAccessRequiredFunc
 {
 	static_assert( std::is_same <xc_domain_set_access_required_func_t, decltype(xc_domain_set_access_required)>::value, "");
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_set_access_required) > ("xc_domain_set_access_required", true);
 	return std::bind(f, getInterface(), _1, _2);
 }
@@ -251,7 +245,6 @@ auto XenControlFactory::getDomainSetAccessRequired() const -> DomainSetAccessReq
 auto XenControlFactory::getDomainHvmGetContext() const -> DomainHvmGetContextFunc
 {
 	static_assert( std::is_same <xc_domain_hvm_getcontext_func_t, decltype(xc_domain_hvm_getcontext)>::value, "");
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_hvm_getcontext) > ("xc_domain_hvm_getcontext", true);
 	return std::bind(f, getInterface(), _1, _2, _3);
 }
@@ -259,7 +252,6 @@ auto XenControlFactory::getDomainHvmGetContext() const -> DomainHvmGetContextFun
 auto XenControlFactory::getDomainHvmGetContextPartial() const -> DomainHvmGetContextPartialFunc
 {
 	static_assert( std::is_same <xc_domain_hvm_getcontext_partial_func_t, decltype(xc_domain_hvm_getcontext_partial)>::value, "");
-	using namespace std::placeholders;
 	auto f = lookup< decltype(xc_domain_hvm_getcontext_partial) > ("xc_domain_hvm_getcontext_partial", true);
 	return std::bind(f, getInterface(), _1, _2, _3, _4, _5);
 }
