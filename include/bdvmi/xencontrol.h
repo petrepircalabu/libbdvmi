@@ -94,8 +94,6 @@ using DomainHvmGetContextFunc = std::function< utils::remove_first_arg<xc_domain
 using DomainHvmGetContextPartialFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
 
 
-class XenControlFactory;
-
 class XenControl
 {
 public:
@@ -106,8 +104,6 @@ private:
 
 	XenControl(const XenControl&) = delete;
 	XenControl& operator=(const XenControl&) = delete;
-
-	std::unique_ptr<XenControlFactory> factory_;
 
 public:
 	const std::pair<int, int> runtimeVersion;

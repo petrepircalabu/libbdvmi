@@ -136,9 +136,13 @@ std::ostream& operator<<(std::ostream &out, const XenDomainHandle& uuid)
 class XenControlFactory
 {
 public:
+	static XenControlFactory& instance();
+
+private:
 	XenControlFactory( );
 	~XenControlFactory( );
 
+public:
 	template < typename T >
 	std::function<T> lookup( const std::string &name, bool required ) const;
 
@@ -256,6 +260,12 @@ auto XenControlFactory::getDomainHvmGetContextPartial() const -> DomainHvmGetCon
 	return std::bind(f, getInterface(), _1, _2, _3, _4, _5);
 }
 
+XenControlFactory& XenControlFactory::instance()
+{
+	static XenControlFactory instance;
+	return instance;
+}
+
 XenControlFactory::XenControlFactory( )
     : libxcHandle_( nullptr ), xci_( nullptr )
 {
@@ -318,18 +328,17 @@ XenControl& XenControl::instance()
 }
 
 XenControl::XenControl( ) :
-	factory_(new XenControlFactory()),
-	runtimeVersion(factory_->getVersion()),
-	caps(factory_->getCaps()),
-	uuid(factory_->getUuid()),
-	domainPause(factory_->getDomainPause()),
-	domainUnpause(factory_->getDomainUnpause()),
-	domainGetInfo(factory_->getDomainGetInfo()),
-	domainMaximumGpfn(factory_->getDomainMaximumGpfn()),
-	domainGetTscInfo(factory_->getDomainGetTscInfo()),
-	domainSetAccessRequired(factory_->getDomainSetAccessRequired()),
-	domainHvmGetContext(factory_->getDomainHvmGetContext()),
-	domainHvmGetContextPartial(factory_->getDomainHvmGetContextPartial())
+	runtimeVersion(XenControlFactory::instance().getVersion()),
+	caps(XenControlFactory::instance().getCaps()),
+	uuid(XenControlFactory::instance().getUuid()),
+	domainPause(XenControlFactory::instance().getDomainPause()),
+	domainUnpause(XenControlFactory::instance().getDomainUnpause()),
+	domainGetInfo(XenControlFactory::instance().getDomainGetInfo()),
+	domainMaximumGpfn(XenControlFactory::instance().getDomainMaximumGpfn()),
+	domainGetTscInfo(XenControlFactory::instance().getDomainGetTscInfo()),
+	domainSetAccessRequired(XenControlFactory::instance().getDomainSetAccessRequired()),
+	domainHvmGetContext(XenControlFactory::instance().getDomainHvmGetContext()),
+	domainHvmGetContextPartial(XenControlFactory::instance().getDomainHvmGetContextPartial())
 {
 }
 
