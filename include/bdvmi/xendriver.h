@@ -28,7 +28,6 @@
 #include "xencontrol.h"
 
 extern "C" {
-#include <xenstore.h>
 #include <xenctrl.h>
 #include <xen/hvm/save.h>
 }
@@ -166,15 +165,12 @@ private:
 
 	void cleanup();
 
-	domid_t getDomainId( const std::string &domainName );
-
 	bool getXCR0( unsigned short vcpu, uint64_t &xcr0 ) const;
 
 	bool getPAT( unsigned short vcpu, uint64_t &pat ) const;
 
 private:
 	xc_interface *xci_;
-	xs_handle *xsh_;
 	domid_t domain_;
 	XenPageCache pageCache_;
 	int guestWidth_;
@@ -191,7 +187,6 @@ private:
 	std::mutex memAccessCacheMutex_;
 	int xenVersionMajor_;
 	int xenVersionMinor_;
-	uint32_t startTime_;
 	mutable bool patInitialized_;
 	mutable uint64_t msrPat_;
 

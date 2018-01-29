@@ -17,8 +17,8 @@
 #include "bdvmi/statscollector.h"
 #include "bdvmi/xendriver.h"
 #include "bdvmi/loghelper.h"
-#include "bdvmi/xeninlines.h"
 #include "bdvmi/xencontrol.h"
+#include "bdvmi/xsutils.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -72,9 +72,9 @@ static bool check_page( void *addr )
 #endif
 
 XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool useAltP2m )
-    : xci_( nullptr ), xsh_( nullptr ), domain_( domain ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
+    : xci_( nullptr ), domain_( domain ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
       useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
-      startTime_( -1 ), patInitialized_( false ), msrPat_( 0 ),
+      patInitialized_( false ), msrPat_( 0 ),
       pause_(std::bind(XenControl::instance().domainPause, domain)),
       unpause_(std::bind(XenControl::instance().domainUnpause, domain)),
       shutdown_(std::bind(XenControl::instance().domainShutdown, domain, std::placeholders::_1)),
@@ -87,11 +87,10 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
 }
 
 XenDriver::XenDriver( const std::string &uuid, LogHelper *logHelper, bool hvmOnly, bool useAltP2m )
-    : xci_( nullptr ), xsh_( nullptr ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
+    : xci_( nullptr ), domain_( XSUtils::instance().getDomainID( uuid ) ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
       useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
-      startTime_( -1 ), patInitialized_( false ), msrPat_( 0 )
+      patInitialized_( false ), msrPat_( 0 )
 {
-	domain_ = getDomainId( uuid );
 	pause_ = std::bind(XenControl::instance().domainPause, domain_);
 	unpause_ = std::bind(XenControl::instance().domainUnpause, domain_);
 	shutdown_ = std::bind(XenControl::instance().domainShutdown, domain_, std::placeholders::_1);
@@ -661,39 +660,9 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 
 	guestWidth_ = ( XenControl::instance().caps.find( "x86_64" ) != std::string::npos ) ? 8 : 4;
 
-	if ( !xsh_ ) {
-		xsh_ = xs_open( 0 );
-
-		if ( !xsh_ ) {
-			cleanup();
-			throw std::runtime_error( "xs_open() failed" );
-		}
-	}
-
 	pageCache_.init( xci_, domain );
 
-	unsigned int size;
-
-	ss.str( "" );
-	ss << "/local/domain/" << domain_ << "/vm";
-
-	char *path = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, ss.str().c_str(), &size, 1 ) );
-
-	if ( path && path[0] != '\0' ) {
-		ss.str( "" );
-		ss << path << "/uuid";
-
-		free( path );
-		size = 0;
-
-		path = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, ss.str().c_str(), &size, 1 ) );
-
-		if ( path && path[0] != '\0' )
-			uuid_ = path;
-	}
-
-	free( path );
-
+	uuid_ = XSUtils::instance().getUUID(domain_);
 	/*
 	xen_pfn_t max_gpfn = 0;
 
@@ -747,62 +716,6 @@ void XenDriver::cleanup()
 		xc_interface_close( xci_ );
 		xci_ = nullptr;
 	}
-
-	if ( xsh_ ) {
-		xs_close( xsh_ );
-		xsh_ = nullptr;
-	}
-}
-
-domid_t XenDriver::getDomainId( const std::string &uuid )
-{
-	domid_t domainId = 0;
-
-	if ( !xsh_ ) {
-		xsh_ = xs_open( 0 );
-
-		if ( !xsh_ ) {
-			cleanup();
-			throw std::runtime_error( "xs_open() failed" );
-		}
-	}
-
-	unsigned int size = 0;
-	char **domains = xs_directory( xsh_, XBT_NULL, "/local/domain", &size );
-
-	if ( size == 0 ) {
-		cleanup();
-		throw std::runtime_error( std::string( "Failed to retrieve domain ID by UUID [" ) + uuid + "]: " +
-		                          strerror( errno ) );
-	}
-
-	for ( unsigned int i = 0; i < size; ++i ) {
-
-		std::string tmp = std::string( "/local/domain/" ) + domains[i] + "/vm";
-
-		char *path = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, tmp.c_str(), nullptr, 1 ) );
-
-		if ( path && path[0] != '\0' ) {
-			tmp = std::string( path ) + "/uuid";
-
-			char *tmpUuid = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, tmp.c_str(), nullptr, 1 ) );
-
-			if ( tmpUuid && uuid == tmpUuid ) {
-				domainId = atoi( domains[i] );
-				free( tmpUuid );
-				free( path );
-				break;
-			}
-
-			free( tmpUuid );
-		}
-
-		free( path );
-	}
-
-	free( domains );
-
-	return domainId;
 }
 
 MapReturnCode XenDriver::mapPhysMemToHost( unsigned long long address, size_t length, uint32_t /*flags*/,
@@ -1023,10 +936,7 @@ bool XenDriver::update()
 	if ( !update_ )
 		return true;
 
-	std::stringstream ss;
-	ss << "/local/domain/" << domain_ << "/data/updated";
-
-	xs_write( xsh_, XBT_NULL, ss.str().c_str(), "now", 3 );
+	XSUtils::instance().update(domain_);
 
 	update_ = false;
 
@@ -1200,49 +1110,11 @@ void XenDriver::clearInjection( unsigned short vcpu )
 
 uint32_t XenDriver::startTime()
 {
-	if ( startTime_ != ( uint32_t )-1 )
-		return startTime_;
+	static uint32_t startTime = ( uint32_t ) -1;
+	if ( startTime == ( uint32_t )-1 )
+		startTime = XSUtils::instance().getStartTime(domain_);
 
-	unsigned int size = 0;
-	std::stringstream ss;
-
-	ss << "/local/domain/" << domain_ << "/vm";
-
-	char *path = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, ss.str().c_str(), &size, 1 ) );
-
-	if ( path && path[0] != '\0' ) {
-		ss.str( "" );
-		ss << path << "/start_time";
-
-		std::string path1 = ss.str();
-
-		ss.str( "" );
-		ss << path << "/domains/" << domain_ << "/create-time";
-
-		std::string path2 = ss.str();
-
-		free( path );
-		size = 0;
-
-		path = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, path1.c_str(), &size, 1 ) );
-
-		if ( path  && path[0] != '\0' )
-			startTime_ = strtoul( path, nullptr, 10 );
-
-		free( path );
-		path = nullptr;
-		size = 0;
-
-		if ( startTime_ == ( uint32_t )-1 ) // XenServer
-			path = static_cast<char *>( xs_read_timeout( xsh_, XBT_NULL, path2.c_str(), &size, 1 ) );
-
-		if ( path  && path[0] != '\0' )
-			startTime_ = strtoul( path, nullptr, 10 );
-	}
-
-	free( path );
-
-	return startTime_;
+	return startTime;
 }
 
 } // namespace bdvmi
