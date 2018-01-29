@@ -15,6 +15,7 @@
 
 #include "bdvmi/xencontrol.h"
 #include "bdvmi/statscollector.h"
+#include "bdvmi/driver.h"
 #include <dlfcn.h>
 #include <type_traits>
 #include <xenctrl.h>
@@ -156,6 +157,8 @@ public:
 	auto getDomainSetAccessRequired() const -> DomainSetAccessRequiredFunc;
 	auto getDomainHvmGetContext() const -> DomainHvmGetContextFunc;
 	auto getDomainHvmGetContextPartial() const -> DomainHvmGetContextPartialFunc;
+	auto getVcpuGetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
+	auto getVcpuSetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
@@ -260,6 +263,18 @@ auto XenControlFactory::getDomainHvmGetContextPartial() const -> DomainHvmGetCon
 	return std::bind(f, getInterface(), _1, _2, _3, _4, _5);
 }
 
+auto XenControlFactory::getVcpuGetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>
+{
+	auto f = lookup<decltype(xc_vcpu_getcontext)> ("xc_vcpu_getcontext", true);
+	return std::bind(f, getInterface(), _1, _2, _3);
+}
+
+auto XenControlFactory::getVcpuSetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>
+{
+	auto f = lookup<decltype(xc_vcpu_setcontext)> ("xc_vcpu_setcontext", true);
+	return std::bind(f, getInterface(), _1, _2, _3);
+}
+
 XenControlFactory& XenControlFactory::instance()
 {
 	static XenControlFactory instance;
@@ -319,6 +334,71 @@ XenControlFactory::~XenControlFactory( )
 		interfaceClose_( xci_ );
 
 	::dlclose( libxcHandle_ );
+}
+
+XenVcpuSetRegisters::XenVcpuSetRegisters(uint32_t domid):
+	domid_( domid ),
+	isX86_64_( XenControl::instance().caps.find( "x86_64" ) != std::string::npos )
+{
+}
+
+void XenVcpuSetRegisters::operator()(unsigned short vcpu, const Registers &regs, bool setEip) const
+{
+	static std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)> vcpu_getcontext =
+		XenControlFactory::instance().getVcpuGetContext();
+	static std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)> vcpu_setcontext =
+		XenControlFactory::instance().getVcpuSetContext();
+	vcpu_guest_context_any_t ctxt;
+
+	StatsCollector::instance().incStat( "xcGetVcpuContext" );
+
+	if ( vcpu_getcontext( domid_, vcpu, &ctxt ) != 0 )
+		throw std::runtime_error(std::string( "xc_vcpu_getcontext() failed: " ) + strerror( errno ) );
+
+	if ( isX86_64_ ) {
+
+		ctxt.x64.user_regs.rax = regs.rax;
+		ctxt.x64.user_regs.rcx = regs.rcx;
+		ctxt.x64.user_regs.rdx = regs.rdx;
+		ctxt.x64.user_regs.rbx = regs.rbx;
+		ctxt.x64.user_regs.rsp = regs.rsp;
+		ctxt.x64.user_regs.rbp = regs.rbp;
+		ctxt.x64.user_regs.rsi = regs.rsi;
+		ctxt.x64.user_regs.rdi = regs.rdi;
+		ctxt.x64.user_regs.r8 = regs.r8;
+		ctxt.x64.user_regs.r9 = regs.r9;
+		ctxt.x64.user_regs.r10 = regs.r10;
+		ctxt.x64.user_regs.r11 = regs.r11;
+		ctxt.x64.user_regs.r12 = regs.r12;
+		ctxt.x64.user_regs.r13 = regs.r13;
+		ctxt.x64.user_regs.r14 = regs.r14;
+		ctxt.x64.user_regs.r15 = regs.r15;
+		ctxt.x64.user_regs.rflags = regs.rflags;
+
+		if ( setEip )
+			ctxt.x64.user_regs.eip = regs.rip;
+
+	} else {
+
+		ctxt.x32.user_regs.eax = regs.rax;
+		ctxt.x32.user_regs.ecx = regs.rcx;
+		ctxt.x32.user_regs.edx = regs.rdx;
+		ctxt.x32.user_regs.ebx = regs.rbx;
+		ctxt.x32.user_regs.esp = regs.rsp;
+		ctxt.x32.user_regs.ebp = regs.rbp;
+		ctxt.x32.user_regs.esi = regs.rsi;
+		ctxt.x32.user_regs.edi = regs.rdi;
+		ctxt.x32.user_regs.eflags = regs.rflags;
+
+		if ( setEip )
+			ctxt.x32.user_regs.eip = regs.rip;
+
+	}
+
+	StatsCollector::instance().incStat( "xcSetContext" );
+
+	if ( vcpu_setcontext( domid_, vcpu, &ctxt ) == -1 )
+		throw std::runtime_error(std::string( "xc_vcpu_setcontext() failed: " ) + strerror( errno ) );
 }
 
 XenControl& XenControl::instance()

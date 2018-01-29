@@ -94,6 +94,19 @@ using DomainHvmGetContextFunc = std::function< utils::remove_first_arg<xc_domain
 using DomainHvmGetContextPartialFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
 
 
+struct Registers;
+
+class XenVcpuSetRegisters
+{
+public:
+	XenVcpuSetRegisters(uint32_t domid);
+	void operator()(unsigned short vcpu, const Registers &regs, bool setEip) const;
+
+private:
+	const uint32_t domid_;
+	const bool isX86_64_;
+};
+
 class XenControl
 {
 public:

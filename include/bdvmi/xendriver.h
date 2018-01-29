@@ -173,7 +173,6 @@ private:
 	xc_interface *xci_;
 	domid_t domain_;
 	XenPageCache pageCache_;
-	int guestWidth_;
 	LogHelper *logHelper_;
 	std::string uuid_;
 	bool useAltP2m_;
@@ -198,7 +197,7 @@ private:
 	std::function<int(uint32_t *, uint64_t *, uint32_t *, uint32_t *)> get_tsc_info_;
 	std::function<int(uint8_t *, uint32_t)> hvm_getcontext_;
 	std::function<int(uint16_t, uint16_t, void *, uint32_t)> hvm_getcontext_partial_;
-
+	XenVcpuSetRegisters vcpuSetRegisters_;
 };
 
 } // namespace bdvmi

@@ -72,7 +72,7 @@ static bool check_page( void *addr )
 #endif
 
 XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool useAltP2m )
-    : xci_( nullptr ), domain_( domain ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
+    : xci_( nullptr ), domain_( domain ), pageCache_( logHelper ), logHelper_( logHelper ),
       useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
       patInitialized_( false ), msrPat_( 0 ),
       pause_(std::bind(XenControl::instance().domainPause, domain)),
@@ -81,7 +81,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       maximum_gpfn_(std::bind(XenControl::instance().domainMaximumGpfn, domain, std::placeholders::_1)),
       get_tsc_info_(std::bind(XenControl::instance().domainGetTscInfo, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
       hvm_getcontext_(std::bind(XenControl::instance().domainHvmGetContext, domain, std::placeholders::_1, std::placeholders::_2)),
-      hvm_getcontext_partial_(std::bind(XenControl::instance().domainHvmGetContextPartial, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
+      hvm_getcontext_partial_(std::bind(XenControl::instance().domainHvmGetContextPartial, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
+      vcpuSetRegisters_(domain)
 {
 	init( domain, hvmOnly );
 }
@@ -491,64 +492,12 @@ bool XenDriver::setRegisters( unsigned short vcpu, const Registers &regs, bool s
 	std::lock_guard<std::mutex> lock( regsCache_.mutex_ );
 
 	if ( !delay ) {
-		vcpu_guest_context_any_t ctxt;
-
-		StatsCollector::instance().incStat( "xcGetVcpuContext" );
-
-		if ( xc_vcpu_getcontext( xci_, domain_, vcpu, &ctxt ) != 0 ) {
-
-			if ( logHelper_ )
-				logHelper_->error( std::string( "xc_vcpu_getcontext() failed: " ) + strerror( errno ) );
-
-			return false;
+		try {
+			vcpuSetRegisters_(vcpu, regs, setEip);
 		}
-
-		if ( guestWidth_ == 4 ) {
-
-			ctxt.x32.user_regs.eax = regs.rax;
-			ctxt.x32.user_regs.ecx = regs.rcx;
-			ctxt.x32.user_regs.edx = regs.rdx;
-			ctxt.x32.user_regs.ebx = regs.rbx;
-			ctxt.x32.user_regs.esp = regs.rsp;
-			ctxt.x32.user_regs.ebp = regs.rbp;
-			ctxt.x32.user_regs.esi = regs.rsi;
-			ctxt.x32.user_regs.edi = regs.rdi;
-			ctxt.x32.user_regs.eflags = regs.rflags;
-
-			if ( setEip )
-				ctxt.x32.user_regs.eip = regs.rip;
-
-		} else {
-
-			ctxt.x64.user_regs.rax = regs.rax;
-			ctxt.x64.user_regs.rcx = regs.rcx;
-			ctxt.x64.user_regs.rdx = regs.rdx;
-			ctxt.x64.user_regs.rbx = regs.rbx;
-			ctxt.x64.user_regs.rsp = regs.rsp;
-			ctxt.x64.user_regs.rbp = regs.rbp;
-			ctxt.x64.user_regs.rsi = regs.rsi;
-			ctxt.x64.user_regs.rdi = regs.rdi;
-			ctxt.x64.user_regs.r8 = regs.r8;
-			ctxt.x64.user_regs.r9 = regs.r9;
-			ctxt.x64.user_regs.r10 = regs.r10;
-			ctxt.x64.user_regs.r11 = regs.r11;
-			ctxt.x64.user_regs.r12 = regs.r12;
-			ctxt.x64.user_regs.r13 = regs.r13;
-			ctxt.x64.user_regs.r14 = regs.r14;
-			ctxt.x64.user_regs.r15 = regs.r15;
-			ctxt.x64.user_regs.rflags = regs.rflags;
-
-			if ( setEip )
-				ctxt.x64.user_regs.eip = regs.rip;
-		}
-
-		StatsCollector::instance().incStat( "xcSetContext" );
-
-		if ( xc_vcpu_setcontext( xci_, domain_, vcpu, &ctxt ) == -1 ) {
-
+		catch ( const std::runtime_error &e) {
 			if ( logHelper_ )
-				logHelper_->error( std::string( "xc_vcpu_setcontext() failed: " ) + strerror( errno ) );
-
+				logHelper_->error( e.what() );
 			return false;
 		}
 	} else {
@@ -556,7 +505,6 @@ bool XenDriver::setRegisters( unsigned short vcpu, const Registers &regs, bool s
 
 		if ( !setEip )
 			delayedWrite_.registers_.rip = regs.rip + 3; // 3 is the size of the VMCALL opcodes
-				// ( ( guestWidth_ == 4 ) ? ctxt.x32.user_regs.eip : ctxt.x64.user_regs.eip );
 
 		delayedWrite_.pending_ = true;
 	}
@@ -650,7 +598,6 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 	xenVersionMajor_ = XenControl::instance().runtimeVersion.first;
 	xenVersionMinor_ = XenControl::instance().runtimeVersion.second;
 
-	guestWidth_ = ( XenControl::instance().caps.find( "x86_64" ) != std::string::npos ) ? 8 : 4;
 
 	pageCache_.init( xci_, domain );
 
