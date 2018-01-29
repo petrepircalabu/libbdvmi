@@ -87,16 +87,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
 }
 
 XenDriver::XenDriver( const std::string &uuid, LogHelper *logHelper, bool hvmOnly, bool useAltP2m )
-    : xci_( nullptr ), domain_( XSUtils::instance().getDomainID( uuid ) ), pageCache_( logHelper ), guestWidth_( 8 ), logHelper_( logHelper ),
-      useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
-      patInitialized_( false ), msrPat_( 0 )
+    : XenDriver(XSUtils::instance().getDomainID( uuid ), logHelper, hvmOnly, useAltP2m)
 {
-	pause_ = std::bind(XenControl::instance().domainPause, domain_);
-	unpause_ = std::bind(XenControl::instance().domainUnpause, domain_);
-	shutdown_ = std::bind(XenControl::instance().domainShutdown, domain_, std::placeholders::_1);
-	maximum_gpfn_ = std::bind(XenControl::instance().domainMaximumGpfn, domain_, std::placeholders::_1);
-	get_tsc_info_ = std::bind(XenControl::instance().domainGetTscInfo, domain_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-	init( domain_, hvmOnly );
 }
 
 XenDriver::~XenDriver()
