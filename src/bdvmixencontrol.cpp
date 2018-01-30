@@ -159,6 +159,7 @@ public:
 	auto getDomainHvmGetContextPartial() const -> DomainHvmGetContextPartialFunc;
 	auto getVcpuGetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
 	auto getVcpuSetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
+	auto getSetMemAccess() const -> std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)>;
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
@@ -273,6 +274,59 @@ auto XenControlFactory::getVcpuSetContext() const -> std::function<int( uint32_t
 {
 	auto f = lookup<decltype(xc_vcpu_setcontext)> ("xc_vcpu_setcontext", true);
 	return std::bind(f, getInterface(), _1, _2, _3);
+}
+
+using SetMemAccessMultiFunc = std::function< utils::remove_first_arg< decltype(xc_set_mem_access_multi) >::type >;
+using SetMemAccessLegacyFunc = std::function< utils::remove_first_arg< decltype(xc_set_mem_access) >::type >;
+
+template <typename T>
+class SetMemAccessImpl
+{
+public:
+	SetMemAccessImpl(const T &handler);
+
+	int operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const;
+
+private:
+	const T handler_;
+};
+
+template <typename T>
+SetMemAccessImpl<T>::SetMemAccessImpl( const T &handler ):
+	handler_(handler)
+{
+}
+
+template <>
+int SetMemAccessImpl<SetMemAccessMultiFunc>::operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const
+{
+	std::vector<uint8_t> access_type;
+	std::vector<uint64_t> gfns;
+
+	for ( auto &&item : access) {
+		access_type.push_back( item.second );
+		gfns.push_back( item.first );
+	}
+	return handler_(domain, &access_type[0], &gfns[0], gfns.size());
+}
+
+template <>
+int SetMemAccessImpl<SetMemAccessLegacyFunc>::operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const
+{
+	for ( auto &&item : access)
+		handler_(domain, item.second, item.first, 1);
+	return 0; //FIXME: value is ignored in the original code
+}
+
+auto XenControlFactory::getSetMemAccess() const -> std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)>
+{
+	auto f = lookup<decltype(xc_set_mem_access_multi)>("xc_set_mem_access_multi", false);
+	if (f)
+		return SetMemAccessImpl<SetMemAccessMultiFunc>(std::bind(f, getInterface(), _1, _2, _3, _4));
+
+	auto g = lookup<decltype(xc_set_mem_access)>("xc_set_mem_access", true);
+
+	return SetMemAccessImpl<SetMemAccessLegacyFunc>(std::bind(g, getInterface(), _1, _2, _3, _4));
 }
 
 XenControlFactory& XenControlFactory::instance()
@@ -418,7 +472,8 @@ XenControl::XenControl( ) :
 	domainGetTscInfo(XenControlFactory::instance().getDomainGetTscInfo()),
 	domainSetAccessRequired(XenControlFactory::instance().getDomainSetAccessRequired()),
 	domainHvmGetContext(XenControlFactory::instance().getDomainHvmGetContext()),
-	domainHvmGetContextPartial(XenControlFactory::instance().getDomainHvmGetContextPartial())
+	domainHvmGetContextPartial(XenControlFactory::instance().getDomainHvmGetContextPartial()),
+	setMemAccess(XenControlFactory::instance().getSetMemAccess())
 {
 }
 

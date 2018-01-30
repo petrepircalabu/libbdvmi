@@ -21,10 +21,12 @@
 #endif
 
 #include <functional>
+#include <map>
 #include <memory>
 #include "bdvmi/utils.h"
 
 #include <xen/version.h>
+#include <xen/memory.h>
 
 struct xc_interface_core;
 typedef struct xc_interface_core xc_interface;
@@ -93,7 +95,6 @@ using DomainSetAccessRequiredFunc = std::function< utils::remove_first_arg< xc_d
 using DomainHvmGetContextFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_func_t >::type >;
 using DomainHvmGetContextPartialFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
 
-
 struct Registers;
 
 class XenVcpuSetRegisters
@@ -136,6 +137,8 @@ public:
 	const DomainSetAccessRequiredFunc domainSetAccessRequired;
 	const DomainHvmGetContextFunc domainHvmGetContext;
 	const DomainHvmGetContextPartialFunc domainHvmGetContextPartial;
+	const std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)> setMemAccess;
+
 };
 
 } // namespace bdvmi
