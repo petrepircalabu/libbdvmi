@@ -83,7 +83,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       get_tsc_info_(std::bind(XenControl::instance().domainGetTscInfo, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
       hvm_getcontext_(std::bind(XenControl::instance().domainHvmGetContext, domain, std::placeholders::_1, std::placeholders::_2)),
       hvm_getcontext_partial_(std::bind(XenControl::instance().domainHvmGetContextPartial, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
-      vcpuSetRegisters_(domain)
+      vcpuSetRegisters_(domain),
+      setMemAccess_(std::bind(XenControl::instance().setMemAccess, domain, std::placeholders::_1))
 {
 	init( domain, hvmOnly );
 }
@@ -211,7 +212,7 @@ bool XenDriver::setPageProtection( unsigned long long guestAddress, bool read, b
 			delayedMemAccessWrite_[gfn] = memaccess;
 #else
 #warning "XENMEM_access_op_set_access_multi is not available!"
-			xc_set_mem_access( xci_, domain_, memaccess, gfn, 1 );
+			setMemAccess_({ std::make_pair(gfn, memaccess) });
 #endif
 		} else {
 #ifdef HVMOP_altp2m_set_mem_access_multi
@@ -235,22 +236,22 @@ void XenDriver::flushPageProtections()
 	if ( delayedMemAccessWrite_.empty() )
 		return;
 
-	std::vector<uint8_t> access;
-	std::vector<uint64_t> gfns;
-
-	for ( auto &&item : delayedMemAccessWrite_ ) {
-		access.push_back( item.second );
-		gfns.push_back( item.first );
-	}
-
 	StatsCollector::instance().incStat( "xcSetMemAccessMulti" );
 
 	if ( !useAltP2m_ ) {
 #ifdef XENMEM_access_op_set_access_multi
-		rc = xc_set_mem_access_multi( xci_, domain_, &access[0], &gfns[0], gfns.size() );
+		rc = setMemAccess_(delayedMemAccessWrite_);
 #endif
 	} else {
 #ifdef HVMOP_altp2m_set_mem_access_multi
+		std::vector<uint8_t> access;
+		std::vector<uint64_t> gfns;
+
+		for ( auto &&item : delayedMemAccessWrite_ ) {
+			access.push_back( item.second );
+			gfns.push_back( item.first );
+		}
+
 		rc = xc_altp2m_set_mem_access_multi( xci_, domain_, altp2mViewId_, &access[0], &gfns[0], gfns.size() );
 #endif
 	}

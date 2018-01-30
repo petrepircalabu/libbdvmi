@@ -197,6 +197,7 @@ private:
 	std::function<int(uint8_t *, uint32_t)> hvm_getcontext_;
 	std::function<int(uint16_t, uint16_t, void *, uint32_t)> hvm_getcontext_partial_;
 	XenVcpuSetRegisters vcpuSetRegisters_;
+	std::function<int(const std::map<unsigned long, xenmem_access_t>&)> setMemAccess_;
 };
 
 } // namespace bdvmi
