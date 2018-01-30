@@ -149,9 +149,9 @@ public:
 
 	void clearInjection( unsigned short vcpu );
 
-	int xenVersionMajor() const { return xenVersionMajor_; }
+	int xenVersionMajor() const { return xenVersion.first; }
 
-	int xenVersionMinor() const { return xenVersionMinor_; }
+	int xenVersionMinor() const { return xenVersion.second; }
 
 private:
 	// Don't allow copying for these objects (class has xci_)
@@ -184,8 +184,7 @@ private:
 	std::map<unsigned long, xenmem_access_t> delayedMemAccessWrite_;
 	std::map<unsigned short, bool> pendingInjections_;
 	std::mutex memAccessCacheMutex_;
-	int xenVersionMajor_;
-	int xenVersionMinor_;
+	std::pair<int, int> xenVersion;
 	mutable bool patInitialized_;
 	mutable uint64_t msrPat_;
 

@@ -73,7 +73,8 @@ static bool check_page( void *addr )
 
 XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool useAltP2m )
     : xci_( nullptr ), domain_( domain ), pageCache_( logHelper ), logHelper_( logHelper ),
-      useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ), xenVersionMajor_( 0 ), xenVersionMinor_( 0 ),
+      useAltP2m_( useAltP2m ), altp2mViewId_( 0 ), update_( false ),
+      xenVersion(XenControl::instance().runtimeVersion),
       patInitialized_( false ), msrPat_( 0 ),
       pause_(std::bind(XenControl::instance().domainPause, domain)),
       unpause_(std::bind(XenControl::instance().domainUnpause, domain)),
@@ -594,10 +595,6 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 	}
 
 	// xc_domain_set_cores_per_socket( xci_, domain, 10 );
-
-	xenVersionMajor_ = XenControl::instance().runtimeVersion.first;
-	xenVersionMinor_ = XenControl::instance().runtimeVersion.second;
-
 
 	pageCache_.init( xci_, domain );
 
