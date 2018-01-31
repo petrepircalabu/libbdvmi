@@ -31,8 +31,10 @@ struct remove_first_arg<R(A, Args... )>
 	using type=R(Args... );
 };
 
-struct Observable
+
+class Observable
 {
+public:
 	void attach(std::function<void()> observer)
 	{
 		observers.push_back(observer);
@@ -41,19 +43,21 @@ struct Observable
 	void notify()
 	{
 		for (auto f:observers)
-		f();
+			f();
 	}
 
 private:
 	std::vector<std::function<void()> > observers;
 };
 
-template <class> struct ObservableFunction;
+template <typename F>
+class ObservableFun;
 
-template <class R, class... Args>
-struct ObservableFunction<R(Args ...)> : public Observable
+template <typename R, typename... Args>
+class ObservableFun<R(Args ...)> : public Observable
 {
-	ObservableFunction(std::function<R(Args ...)>f) : f_(f) {}
+public:
+	ObservableFun(std::function<R(Args ...)>f) : f_(f) {}
 
 	R operator()(Args ... args)
 	{
