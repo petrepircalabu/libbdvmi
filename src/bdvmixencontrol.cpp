@@ -160,6 +160,7 @@ public:
 	auto getVcpuGetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
 	auto getVcpuSetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
 	auto getSetMemAccess() const -> std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)>;
+	auto getAltp2mSetMemAccess() const -> std::function<int(uint32_t, uint16_t, const std::map<unsigned long, xenmem_access_t>&)>;
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
@@ -314,6 +315,50 @@ auto XenControlFactory::getSetMemAccess() const -> std::function<int(uint32_t, c
 	return SetMemAccessImpl<SetMemAccessLegacyFunc>(std::bind(g, getInterface(), _1, _2, _3, _4));
 }
 
+#ifdef HVMOP_altp2m_set_mem_access_multi
+using Altp2mSetMemAccessMultiFunc = std::function< utils::remove_first_arg< decltype(xc_altp2m_set_mem_access_multi) >::type >;
+#endif
+using Altp2mSetMemAccessLegacyFunc = std::function< utils::remove_first_arg< decltype(xc_altp2m_set_mem_access) >::type >;
+
+template <typename T>
+using Altp2mSetMemAccessImpl = utils::AdapterFun<T, int(uint32_t domain, uint16_t altp2mViewId, const std::map<unsigned long, xenmem_access_t> &access)> ;
+
+#ifdef HVMOP_altp2m_set_mem_access_multi
+template <>
+int Altp2mSetMemAccessImpl<Altp2mSetMemAccessMultiFunc>::operator()(uint32_t domain, uint16_t altp2mViewId, const std::map<unsigned long, xenmem_access_t> &access) const
+{
+	std::vector<uint8_t> access_type;
+	std::vector<uint64_t> gfns;
+
+	for ( auto &&item : access) {
+		access_type.push_back( item.second );
+		gfns.push_back( item.first );
+	}
+	return f_(domain, altp2mViewId, &access_type[0], &gfns[0], gfns.size());
+}
+#endif
+
+template <>
+int Altp2mSetMemAccessImpl<Altp2mSetMemAccessLegacyFunc>::operator()(uint32_t domain, uint16_t altp2mViewId, const std::map<unsigned long, xenmem_access_t> &access) const
+{
+	for ( auto &&item : access)
+		// the gfn & access parameters' order is reversed from xc_set_mem_access
+		f_( domain, altp2mViewId, item.first, item.second );
+	return 0; //FIXME: value is ignored in the original code
+}
+
+auto XenControlFactory::getAltp2mSetMemAccess() const -> std::function<int(uint32_t, uint16_t, const std::map<unsigned long, xenmem_access_t>&)>
+{
+#ifdef HVMOP_altp2m_set_mem_access_multi
+	auto f = lookup<decltype(xc_altp2m_set_mem_access_multi)>("xc_altp2m_set_mem_access_multi", false);
+	if (f)
+		return Altp2mSetMemAccessImpl<Altp2mSetMemAccessMultiFunc>(std::bind(f, getInterface(), _1, _2, _3, _4, _5));
+#endif
+
+	auto g = lookup<decltype(xc_altp2m_set_mem_access)>("xc_altp2m_set_mem_access", true);
+
+	return Altp2mSetMemAccessImpl<Altp2mSetMemAccessLegacyFunc>(std::bind(g, getInterface(), _1, _2, _3, _4));
+}
 XenControlFactory& XenControlFactory::instance()
 {
 	static XenControlFactory instance;
@@ -458,7 +503,8 @@ XenControl::XenControl( ) :
 	domainSetAccessRequired(XenControlFactory::instance().getDomainSetAccessRequired()),
 	domainHvmGetContext(XenControlFactory::instance().getDomainHvmGetContext()),
 	domainHvmGetContextPartial(XenControlFactory::instance().getDomainHvmGetContextPartial()),
-	setMemAccess(XenControlFactory::instance().getSetMemAccess())
+	setMemAccess(XenControlFactory::instance().getSetMemAccess()),
+	altp2mSetMemAccess(XenControlFactory::instance().getAltp2mSetMemAccess())
 {
 }
 

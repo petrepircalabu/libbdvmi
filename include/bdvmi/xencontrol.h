@@ -138,7 +138,7 @@ public:
 	const DomainHvmGetContextFunc domainHvmGetContext;
 	const DomainHvmGetContextPartialFunc domainHvmGetContextPartial;
 	const std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)> setMemAccess;
-
+	const std::function<int(uint32_t, uint16_t, const std::map<unsigned long, xenmem_access_t>&)> altp2mSetMemAccess;
 };
 
 } // namespace bdvmi
