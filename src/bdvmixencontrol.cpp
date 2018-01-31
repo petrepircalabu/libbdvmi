@@ -280,22 +280,7 @@ using SetMemAccessMultiFunc = std::function< utils::remove_first_arg< decltype(x
 using SetMemAccessLegacyFunc = std::function< utils::remove_first_arg< decltype(xc_set_mem_access) >::type >;
 
 template <typename T>
-class SetMemAccessImpl
-{
-public:
-	SetMemAccessImpl(const T &handler);
-
-	int operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const;
-
-private:
-	const T handler_;
-};
-
-template <typename T>
-SetMemAccessImpl<T>::SetMemAccessImpl( const T &handler ):
-	handler_(handler)
-{
-}
+using SetMemAccessImpl = utils::AdapterFun<T, int(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access)> ;
 
 template <>
 int SetMemAccessImpl<SetMemAccessMultiFunc>::operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const
@@ -307,14 +292,14 @@ int SetMemAccessImpl<SetMemAccessMultiFunc>::operator()(uint32_t domain, const s
 		access_type.push_back( item.second );
 		gfns.push_back( item.first );
 	}
-	return handler_(domain, &access_type[0], &gfns[0], gfns.size());
+	return f_(domain, &access_type[0], &gfns[0], gfns.size());
 }
 
 template <>
 int SetMemAccessImpl<SetMemAccessLegacyFunc>::operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const
 {
 	for ( auto &&item : access)
-		handler_(domain, item.second, item.first, 1);
+		f_(domain, item.second, item.first, 1);
 	return 0; //FIXME: value is ignored in the original code
 }
 
