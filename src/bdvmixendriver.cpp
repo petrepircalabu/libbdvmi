@@ -84,7 +84,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       hvm_getcontext_(std::bind(XenControl::instance().domainHvmGetContext, domain, std::placeholders::_1, std::placeholders::_2)),
       hvm_getcontext_partial_(std::bind(XenControl::instance().domainHvmGetContextPartial, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
       vcpuSetRegisters_(domain),
-      setMemAccess_(std::bind(XenControl::instance().setMemAccess, domain, std::placeholders::_1))
+      setMemAccess_(std::bind(XenControl::instance().setMemAccess, domain, std::placeholders::_1)),
+      altp2mSetMemAccess_(std::bind(XenControl::instance().altp2mSetMemAccess, domain, std::placeholders::_1, std::placeholders::_2))
 {
 	init( domain, hvmOnly );
 }
@@ -219,7 +220,7 @@ bool XenDriver::setPageProtection( unsigned long long guestAddress, bool read, b
 			delayedMemAccessWrite_[gfn] = memaccess;
 #else
 #warning "HVMOP_altp2m_set_mem_access_multi is not available!"
-			xc_altp2m_set_mem_access( xci_, domain_, altp2mViewId_, gfn, memaccess );
+			altp2mSetMemAccess_(altp2mViewId_, { std::make_pair(gfn, memaccess) });
 #endif
 		}
 	}
@@ -244,15 +245,7 @@ void XenDriver::flushPageProtections()
 #endif
 	} else {
 #ifdef HVMOP_altp2m_set_mem_access_multi
-		std::vector<uint8_t> access;
-		std::vector<uint64_t> gfns;
-
-		for ( auto &&item : delayedMemAccessWrite_ ) {
-			access.push_back( item.second );
-			gfns.push_back( item.first );
-		}
-
-		rc = xc_altp2m_set_mem_access_multi( xci_, domain_, altp2mViewId_, &access[0], &gfns[0], gfns.size() );
+		rc = altp2mSetMemAccess_(altp2mViewId_, delayedMemAccessWrite_);
 #endif
 	}
 
@@ -629,7 +622,7 @@ void XenDriver::init( domid_t domain, bool hvmOnly )
 		maximum_gpfn_( &max_gpfn );
 
 		for ( xen_pfn_t gfn = 0; gfn < max_gpfn; ++gfn )
-			xc_altp2m_set_mem_access( xci_, domain_, altp2mViewId_, gfn, XENMEM_access_rwx );
+			altp2mSetMemAccess_(altp2mViewId_, { std::make_pair(gfn, XENMEM_access_rwx) });
 
 		if ( xc_altp2m_switch_to_view( xci_, domain_, altp2mViewId_ ) < 0 ) {
 			cleanup();
