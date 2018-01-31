@@ -68,6 +68,20 @@ private:
 	std::function<R(Args ...)> f_;
 };
 
+template <typename F, typename R>
+class AdapterFun;
+
+template <typename F, typename R, typename... Args>
+class AdapterFun<F, R(Args ...)>
+{
+public:
+	AdapterFun(const F& f) : f_(f) {}
+
+	R operator()(Args ... args) const;
+private:
+	const F f_;
+};
+
 } // namespace utils
 
 } // namespace bdvmi
