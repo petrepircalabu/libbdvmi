@@ -162,6 +162,7 @@ public:
 	auto getSetMemAccess() const -> std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)>;
 	auto getAltp2mSetMemAccess() const -> std::function<int(uint32_t, uint16_t, const std::map<unsigned long, xenmem_access_t>&)>;
 	auto getAltp2mSetDomainState() const -> Altp2mSetDomainStateFunc;
+	auto getAltp2mCreateView() const -> Altp2mCreateViewFunc;
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
@@ -369,6 +370,13 @@ auto XenControlFactory::getAltp2mSetDomainState() const -> Altp2mSetDomainStateF
 	return std::bind(f, getInterface(), _1, _2);
 }
 
+auto XenControlFactory::getAltp2mCreateView() const -> Altp2mCreateViewFunc
+{
+	static_assert( std::is_same <xc_altp2m_create_view_func_t, decltype(xc_altp2m_create_view)>::value, "");
+	auto f = lookup< decltype(xc_altp2m_create_view) > ("xc_altp2m_create_view", true);
+	return std::bind(f, getInterface(), _1, _2, _3);
+}
+
 XenControlFactory& XenControlFactory::instance()
 {
 	static XenControlFactory instance;
@@ -522,7 +530,8 @@ XenControl::XenControl( ) :
 	domainHvmGetContextPartial(XenControlFactory::instance().getDomainHvmGetContextPartial()),
 	setMemAccess(XenControlFactory::instance().getSetMemAccess()),
 	altp2mSetMemAccess(XenControlFactory::instance().getAltp2mSetMemAccess()),
-	altp2mSetDomainState(XenControlFactory::instance().getAltp2mSetDomainState())
+	altp2mSetDomainState(XenControlFactory::instance().getAltp2mSetDomainState()),
+	altp2mCreateView(XenControlFactory::instance().getAltp2mCreateView())
 {
 }
 
