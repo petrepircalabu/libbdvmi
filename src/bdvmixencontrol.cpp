@@ -164,6 +164,7 @@ public:
 	auto getAltp2mSetDomainState() const -> Altp2mSetDomainStateFunc;
 	auto getAltp2mCreateView() const -> Altp2mCreateViewFunc;
 	auto getAltp2mDestroyView() const -> Altp2mDestroyViewFunc;
+	auto getAltp2mSwitchToView() const -> Altp2mSwitchToViewFunc;
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
@@ -385,6 +386,13 @@ auto XenControlFactory::getAltp2mDestroyView() const -> Altp2mDestroyViewFunc
 	return std::bind(f, getInterface(), _1, _2);
 }
 
+auto XenControlFactory::getAltp2mSwitchToView() const -> Altp2mSwitchToViewFunc
+{
+	static_assert( std::is_same <xc_altp2m_switch_to_view_func_t, decltype(xc_altp2m_switch_to_view)>::value, "");
+	auto f = lookup< decltype(xc_altp2m_switch_to_view) > ("xc_altp2m_switch_to_view", true);
+	return std::bind(f, getInterface(), _1, _2);
+}
+
 XenControlFactory& XenControlFactory::instance()
 {
 	static XenControlFactory instance;
@@ -540,7 +548,8 @@ XenControl::XenControl( ) :
 	altp2mSetMemAccess(XenControlFactory::instance().getAltp2mSetMemAccess()),
 	altp2mSetDomainState(XenControlFactory::instance().getAltp2mSetDomainState()),
 	altp2mCreateView(XenControlFactory::instance().getAltp2mCreateView()),
-	altp2mDestroyView(XenControlFactory::instance().getAltp2mDestroyView())
+	altp2mDestroyView(XenControlFactory::instance().getAltp2mDestroyView()),
+	altp2mSwitchToView(XenControlFactory::instance().getAltp2mSwitchToView())
 {
 }
 

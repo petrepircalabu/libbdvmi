@@ -43,6 +43,7 @@ typedef int xc_domain_hvm_getcontext_partial_func_t ( xc_interface*, uint32_t, u
 typedef int xc_altp2m_set_domain_state_func_t ( xc_interface*, uint32_t, bool );
 typedef int xc_altp2m_create_view_func_t( xc_interface*, uint32_t, xenmem_access_t, uint16_t *);
 typedef int xc_altp2m_destroy_view_func_t( xc_interface*, uint32_t, uint16_t );
+typedef int xc_altp2m_switch_to_view_func_t( xc_interface*, uint32_t, uint16_t );
 
 struct xc_dominfo;
 typedef struct xc_dominfo xc_dominfo_t;
@@ -100,6 +101,7 @@ using DomainHvmGetContextPartialFunc = std::function< remove_first_arg<xc_domain
 using Altp2mSetDomainStateFunc = std::function< remove_first_arg< xc_altp2m_set_domain_state_func_t >::type >;
 using Altp2mCreateViewFunc = std::function< remove_first_arg< xc_altp2m_create_view_func_t >::type >;
 using Altp2mDestroyViewFunc = std::function< remove_first_arg< xc_altp2m_destroy_view_func_t >::type >;
+using Altp2mSwitchToViewFunc = std::function< remove_first_arg< xc_altp2m_switch_to_view_func_t >::type >;
 
 struct Registers;
 
@@ -158,6 +160,7 @@ public:
 	const Altp2mSetDomainStateFunc altp2mSetDomainState;
 	const Altp2mCreateViewFunc altp2mCreateView;
 	const Altp2mDestroyViewFunc altp2mDestroyView;
+	const Altp2mSwitchToViewFunc altp2mSwitchToView;
 };
 
 } // namespace bdvmi
