@@ -40,6 +40,7 @@ typedef int xc_domain_get_tsc_info_func_t ( xc_interface*, uint32_t, uint32_t*, 
 typedef int xc_domain_set_access_required_func_t ( xc_interface*, uint32_t, unsigned int );
 typedef int xc_domain_hvm_getcontext_func_t ( xc_interface*, uint32_t, uint8_t*, uint32_t );
 typedef int xc_domain_hvm_getcontext_partial_func_t ( xc_interface*, uint32_t, uint16_t, uint16_t, void*, uint32_t );
+typedef int xc_altp2m_set_domain_state_func_t ( xc_interface*, uint32_t, bool );
 
 struct xc_dominfo;
 typedef struct xc_dominfo xc_dominfo_t;
@@ -94,6 +95,7 @@ using DomainGetTscInfoFunc = std::function< remove_first_arg< xc_domain_get_tsc_
 using DomainSetAccessRequiredFunc = std::function< remove_first_arg< xc_domain_set_access_required_func_t >::type >;
 using DomainHvmGetContextFunc = std::function< remove_first_arg<xc_domain_hvm_getcontext_func_t >::type >;
 using DomainHvmGetContextPartialFunc = std::function< remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
+using Altp2mSetDomainStateFunc = std::function< remove_first_arg< xc_altp2m_set_domain_state_func_t >::type >;
 
 struct Registers;
 
@@ -149,6 +151,7 @@ public:
 	const DomainHvmGetContextPartialFunc domainHvmGetContextPartial;
 	const std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)> setMemAccess;
 	const std::function<int(uint32_t, uint16_t, const std::map<unsigned long, xenmem_access_t>&)> altp2mSetMemAccess;
+	const Altp2mSetDomainStateFunc altp2mSetDomainState;
 };
 
 } // namespace bdvmi

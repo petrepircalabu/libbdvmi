@@ -161,6 +161,7 @@ public:
 	auto getVcpuSetContext() const -> std::function<int( uint32_t, uint32_t, vcpu_guest_context_any_t*)>;
 	auto getSetMemAccess() const -> std::function<int(uint32_t, const std::map<unsigned long, xenmem_access_t>&)>;
 	auto getAltp2mSetMemAccess() const -> std::function<int(uint32_t, uint16_t, const std::map<unsigned long, xenmem_access_t>&)>;
+	auto getAltp2mSetDomainState() const -> Altp2mSetDomainStateFunc;
 
 	std::pair< int, int > getVersion() const;
 	const std::string getCaps() const;
@@ -359,6 +360,15 @@ auto XenControlFactory::getAltp2mSetMemAccess() const -> std::function<int(uint3
 
 	return Altp2mSetMemAccessImpl<Altp2mSetMemAccessLegacyFunc>(std::bind(g, getInterface(), _1, _2, _3, _4));
 }
+
+
+auto XenControlFactory::getAltp2mSetDomainState() const -> Altp2mSetDomainStateFunc
+{
+	static_assert( std::is_same <xc_altp2m_set_domain_state_func_t, decltype(xc_altp2m_set_domain_state)>::value, "");
+	auto f = lookup< decltype(xc_altp2m_set_domain_state) > ("xc_altp2m_set_domain_state", true);
+	return std::bind(f, getInterface(), _1, _2);
+}
+
 XenControlFactory& XenControlFactory::instance()
 {
 	static XenControlFactory instance;
@@ -511,7 +521,8 @@ XenControl::XenControl( ) :
 	domainHvmGetContext(XenControlFactory::instance().getDomainHvmGetContext()),
 	domainHvmGetContextPartial(XenControlFactory::instance().getDomainHvmGetContextPartial()),
 	setMemAccess(XenControlFactory::instance().getSetMemAccess()),
-	altp2mSetMemAccess(XenControlFactory::instance().getAltp2mSetMemAccess())
+	altp2mSetMemAccess(XenControlFactory::instance().getAltp2mSetMemAccess()),
+	altp2mSetDomainState(XenControlFactory::instance().getAltp2mSetDomainState())
 {
 }
 
