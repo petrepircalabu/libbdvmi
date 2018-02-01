@@ -277,11 +277,11 @@ auto XenControlFactory::getVcpuSetContext() const -> std::function<int( uint32_t
 	return std::bind(f, getInterface(), _1, _2, _3);
 }
 
-using SetMemAccessMultiFunc = std::function< utils::remove_first_arg< decltype(xc_set_mem_access_multi) >::type >;
-using SetMemAccessLegacyFunc = std::function< utils::remove_first_arg< decltype(xc_set_mem_access) >::type >;
+using SetMemAccessMultiFunc = std::function< remove_first_arg< decltype(xc_set_mem_access_multi) >::type >;
+using SetMemAccessLegacyFunc = std::function< remove_first_arg< decltype(xc_set_mem_access) >::type >;
 
 template <typename T>
-using SetMemAccessImpl = utils::AdapterFun<T, int(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access)> ;
+using SetMemAccessImpl = AdapterFun<T, int(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access)> ;
 
 template <>
 int SetMemAccessImpl<SetMemAccessMultiFunc>::operator()(uint32_t domain, const std::map<unsigned long, xenmem_access_t> &access) const
@@ -316,12 +316,12 @@ auto XenControlFactory::getSetMemAccess() const -> std::function<int(uint32_t, c
 }
 
 #ifdef HVMOP_altp2m_set_mem_access_multi
-using Altp2mSetMemAccessMultiFunc = std::function< utils::remove_first_arg< decltype(xc_altp2m_set_mem_access_multi) >::type >;
+using Altp2mSetMemAccessMultiFunc = std::function< remove_first_arg< decltype(xc_altp2m_set_mem_access_multi) >::type >;
 #endif
-using Altp2mSetMemAccessLegacyFunc = std::function< utils::remove_first_arg< decltype(xc_altp2m_set_mem_access) >::type >;
+using Altp2mSetMemAccessLegacyFunc = std::function< remove_first_arg< decltype(xc_altp2m_set_mem_access) >::type >;
 
 template <typename T>
-using Altp2mSetMemAccessImpl = utils::AdapterFun<T, int(uint32_t domain, uint16_t altp2mViewId, const std::map<unsigned long, xenmem_access_t> &access)> ;
+using Altp2mSetMemAccessImpl = AdapterFun<T, int(uint32_t domain, uint16_t altp2mViewId, const std::map<unsigned long, xenmem_access_t> &access)> ;
 
 #ifdef HVMOP_altp2m_set_mem_access_multi
 template <>

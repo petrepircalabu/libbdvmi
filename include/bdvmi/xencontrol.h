@@ -85,15 +85,15 @@ private:
 	std::string uuid_;
 };
 
-using DomainPauseFunc = std::function< utils::remove_first_arg< xc_domain_pause_func_t >::type >;
-using DomainUnpauseFunc = std::function< utils::remove_first_arg< xc_domain_unpause_func_t >::type >;
-using DomainShutdownFunc = std::function< utils::remove_first_arg< xc_domain_shutdown_func_t >::type >;
-using DomainMaximumGpfnFunc = std::function< utils::remove_first_arg< xc_domain_maximum_gpfn_func_t >::type >;
-using DomainDebugControlFunc = std::function< utils::remove_first_arg< xc_domain_debug_control_func_t >::type >;
-using DomainGetTscInfoFunc = std::function< utils::remove_first_arg< xc_domain_get_tsc_info_func_t >::type >;
-using DomainSetAccessRequiredFunc = std::function< utils::remove_first_arg< xc_domain_set_access_required_func_t >::type >;
-using DomainHvmGetContextFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_func_t >::type >;
-using DomainHvmGetContextPartialFunc = std::function< utils::remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
+using DomainPauseFunc = std::function< remove_first_arg< xc_domain_pause_func_t >::type >;
+using DomainUnpauseFunc = std::function< remove_first_arg< xc_domain_unpause_func_t >::type >;
+using DomainShutdownFunc = std::function< remove_first_arg< xc_domain_shutdown_func_t >::type >;
+using DomainMaximumGpfnFunc = std::function< remove_first_arg< xc_domain_maximum_gpfn_func_t >::type >;
+using DomainDebugControlFunc = std::function< remove_first_arg< xc_domain_debug_control_func_t >::type >;
+using DomainGetTscInfoFunc = std::function< remove_first_arg< xc_domain_get_tsc_info_func_t >::type >;
+using DomainSetAccessRequiredFunc = std::function< remove_first_arg< xc_domain_set_access_required_func_t >::type >;
+using DomainHvmGetContextFunc = std::function< remove_first_arg<xc_domain_hvm_getcontext_func_t >::type >;
+using DomainHvmGetContextPartialFunc = std::function< remove_first_arg<xc_domain_hvm_getcontext_partial_func_t >::type >;
 
 struct Registers;
 

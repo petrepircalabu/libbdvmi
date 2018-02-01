@@ -20,8 +20,6 @@
 
 namespace bdvmi {
 
-namespace utils {
-
 template <typename F>
 struct remove_first_arg;
 
@@ -81,8 +79,6 @@ public:
 private:
 	const F f_;
 };
-
-} // namespace utils
 
 } // namespace bdvmi
 
