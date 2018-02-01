@@ -199,6 +199,7 @@ private:
 	XenVcpuSetRegisters vcpuSetRegisters_;
 	std::function<int(const std::map<unsigned long, xenmem_access_t>&)> setMemAccess_;
 	std::function<int(uint16_t, const std::map<unsigned long, xenmem_access_t>&)> altp2mSetMemAccess_;
+	std::unique_ptr<XenAltp2mDomainState> altp2mState;
 };
 
 } // namespace bdvmi

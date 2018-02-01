@@ -108,6 +108,16 @@ private:
 	const bool isX86_64_;
 };
 
+class XenAltp2mDomainState
+{
+public:
+	XenAltp2mDomainState(uint32_t domain);
+
+private:
+	uint32_t domain_;
+	bool enabled_;
+};
+
 class XenControl
 {
 public:

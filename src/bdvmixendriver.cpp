@@ -85,7 +85,8 @@ XenDriver::XenDriver( domid_t domain, LogHelper *logHelper, bool hvmOnly, bool u
       hvm_getcontext_partial_(std::bind(XenControl::instance().domainHvmGetContextPartial, domain, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
       vcpuSetRegisters_(domain),
       setMemAccess_(std::bind(XenControl::instance().setMemAccess, domain, std::placeholders::_1)),
-      altp2mSetMemAccess_(std::bind(XenControl::instance().altp2mSetMemAccess, domain, std::placeholders::_1, std::placeholders::_2))
+      altp2mSetMemAccess_(std::bind(XenControl::instance().altp2mSetMemAccess, domain, std::placeholders::_1, std::placeholders::_2)),
+      altp2mState(( useAltP2m ) ? new XenAltp2mDomainState(domain) : nullptr )
 {
 	init( domain, hvmOnly );
 }

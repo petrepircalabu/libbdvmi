@@ -485,6 +485,13 @@ void XenVcpuSetRegisters::operator()(unsigned short vcpu, const Registers &regs,
 		throw std::runtime_error(std::string( "xc_vcpu_setcontext() failed: " ) + strerror( errno ) );
 }
 
+XenAltp2mDomainState::XenAltp2mDomainState(uint32_t domain) :
+	domain_(domain),
+	enabled_(true)
+{
+}
+
+
 XenControl& XenControl::instance()
 {
 	static XenControl instance;
