@@ -38,3 +38,10 @@ examples/hookguest
 examples/testctrl
 
 .vscode
+
+# tests
+*.log
+*.trs
+.dirstamp
+test-driver
+src/tests/test_altp2m_domain
