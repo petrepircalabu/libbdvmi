@@ -7,3 +7,5 @@ libbdvmi_la_SOURCES = bdvmibackendfactory.cpp bdvmidomainwatcher.cpp \
     bdvmixencache.cpp bdvmixencontrol.cpp bdvmixendomainwatcher.cpp \
     bdvmixendriver.cpp  bdvmixeneventmanager.cpp bdvmixsutils.cpp \
     bdvmistatscollector.cpp
+
+SUBDIRS = tests

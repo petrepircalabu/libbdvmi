@@ -27,7 +27,7 @@ if test -n $XENDIR ; then
     LDFLAGS="-L$XENDIR/lib -Wl,-rpath,$XENDIR/lib $LDFLAGS"
 fi
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
@@ -42,4 +42,4 @@ AC_CHECK_TYPE(uint16_t, unsigned short)
 AC_CHECK_TYPE(uint32_t, unsigned int)
 AC_CHECK_TYPE(uint64_t, unsigned long long)
 
-AC_OUTPUT(Makefile src/Makefile include/Makefile examples/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/tests/Makefile include/Makefile examples/Makefile)
