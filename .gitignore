@@ -36,3 +36,5 @@ GTAGS
 
 examples/hookguest
 examples/testctrl
+
+.vscode
