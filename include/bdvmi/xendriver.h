@@ -24,6 +24,7 @@
 #include <mutex>
 
 #include "driver.h"
+#include "xenaltp2m.h"
 #include "xencache.h"
 #include "xencontrol.h"
 

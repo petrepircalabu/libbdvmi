@@ -519,42 +519,6 @@ void XenVcpuSetRegisters::operator()(unsigned short vcpu, const Registers &regs,
 		throw std::runtime_error(std::string( "xc_vcpu_setcontext() failed: " ) + strerror( errno ) );
 }
 
-XenAltp2mDomainState::XenAltp2mDomainState(uint32_t domain) :
-	domain_(domain),
-	enabled_(true),
-	enableAltp2m_( std::bind(XenControl::instance().altp2mSetDomainState, domain, _1) )
-{
-	if ( enableAltp2m_(true) < 0 )
-		throw std::runtime_error( std::string( "[ALTP2M] could not enable altp2m on domain: " ) +
-					  strerror( errno ) );
-}
-
-XenAltp2mDomainState::~XenAltp2mDomainState()
-{
-	enableAltp2m_(false);
-}
-
-uint16_t XenAltp2mDomainState::createView()
-{
-	XenAltp2mView *pView = new XenAltp2mView();
-	uint16_t id = pView->getId();
-	views_.emplace( id, pView);
-	return id;
-}
-
-void XenAltp2mDomainState::destroyView( uint16_t view_id )
-{
-	XenAltp2mView *pView;
-	if ( views_.find(view_id) == views_.end() )
-		throw std::runtime_error( "[ALTP2M] could not destroy view (invalid ID)" );
-	pView = views_[view_id];
-	delete pView;
-}
-
-void XenAltp2mDomainState::switchToView( uint16_t view_id )
-{
-}
-
 XenControl& XenControl::instance()
 {
 	static XenControl instance;

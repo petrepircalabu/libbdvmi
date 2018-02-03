@@ -116,40 +116,6 @@ private:
 	const bool isX86_64_;
 };
 
-class XenAltp2mView
-{
-public:
-	XenAltp2mView();
-	~XenAltp2mView();
-
-	uint16_t getId() const;
-
-private:
-	uint16_t view_id_;
-	std::function<int(xenmem_access_t, uint16_t *)> createView_;
-	std::function<int(uint16_t)> destroyView_;
-	std::function<int(uint16_t)> switchToView_;
-};
-
-class XenAltp2mDomainState
-{
-public:
-	XenAltp2mDomainState(uint32_t domain);
-	~XenAltp2mDomainState();
-
-	uint16_t createView();
-
-	void destroyView( uint16_t view_id );
-
-	void switchToView( uint16_t view_id );
-
-private:
-	uint32_t domain_;
-	bool enabled_;
-	std::function<int(bool)> enableAltp2m_;
-	std::map<uint16_t, std::unique_ptr<XenAltp2mView> > views_;
-};
-
 class XenControl
 {
 public:
